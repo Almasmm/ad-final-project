@@ -10,6 +10,8 @@ const productRoutes = require('./routes/products');
 const interactionRoutes = require('./routes/interactions');
 const orderRoutes = require('./routes/orders');
 const recommendationRoutes = require('./routes/recommendations');
+const swaggerUi = require('swagger-ui-express');
+const { swaggerSpec } = require('./config/swagger');
 
 const app = express();
 
@@ -25,6 +27,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/interactions', interactionRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api', recommendationRoutes); // /recommendations/:userId и /products/:id/similar
+app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // boot
 const PORT = process.env.PORT || 3000;
