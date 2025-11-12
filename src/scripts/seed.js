@@ -1,7 +1,8 @@
 require('dotenv').config();
 const { connectDB } = require('../config/db');
+const bcrypt = require('bcryptjs');
 
-const User = require('../models/User');
+const User = require('../models/User')
 const Product = require('../models/Product');
 const Interaction = require('../models/Interaction');
 const Cart = require('../models/Cart');
@@ -22,11 +23,13 @@ async function run() {
         ItemSimilarity.deleteMany({})
     ]);
 
+    const pwd = await bcrypt.hash('Passw0rd!', 10);
+
     // Users
     const users = [
-        { _id: 'u_100', email: 'alice@example.com', name: 'Alice', segments: ['new', 'electronics'] },
-        { _id: 'u_101', email: 'bob@example.com', name: 'Bob', segments: ['electronics'] },
-        { _id: 'u_102', email: 'carol@example.com', name: 'Carol', segments: ['home'] }
+        { _id: 'u_100', email: 'alice@example.com', name: 'Alice', segments: ['new', 'electronics'], password: pwd },
+        { _id: 'u_101', email: 'bob@example.com', name: 'Bob', segments: ['electronics'], password: pwd },
+        { _id: 'u_102', email: 'carol@example.com', name: 'Carol', segments: ['home'], password: pwd }
     ];
     await User.insertMany(users);
 
