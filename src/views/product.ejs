@@ -1,0 +1,9 @@
+<% layout('layout', { title: 'Товар' , userId }); %>
+    <h4 class="mb-3">Товар <code><%= id %></code></h4>
+    <div id="productCard" class="mb-4"></div>
+    <h5>Похожие товары</h5>
+    <div id="similar" class="row g-3"></div>
+    <script>
+        window.__PRODUCT_ID__ = "<%= id %>";
+        window.__USER_ID__ = "<%= userId || '' %>";
+    </script>

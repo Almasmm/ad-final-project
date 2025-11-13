@@ -1,0 +1,34 @@
+<% layout('layout', { title: 'Главная' , userId }); %>
+    <div class="row g-3 align-items-end mb-4">
+        <div class="col-md-5">
+            <label class="form-label">Поиск</label>
+            <input id="q" class="form-control" placeholder="keyboard, mouse...">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Категория</label>
+            <input id="categoryId" class="form-control" placeholder="c_10, c_11...">
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Сортировка</label>
+            <select id="sort" class="form-select">
+                <option value="">—</option>
+                <option value="rating_desc">rating_desc</option>
+                <option value="price_asc">price_asc</option>
+                <option value="price_desc">price_desc</option>
+                <option value="newest">newest</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-primary w-100" id="searchBtn">Найти</button>
+        </div>
+    </div>
+
+    <h5 class="mb-3">Каталог</h5>
+    <div id="products" class="row g-3"></div>
+
+    <% if (userId) { %>
+        <hr class="my-4">
+        <h5>Рекомендовано вам</h5>
+        <div id="reco" class="row g-3"></div>
+        <script>window.__USER_ID__ = "<%= userId %>";</script>
+        <% } %>
