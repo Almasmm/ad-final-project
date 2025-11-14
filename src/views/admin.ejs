@@ -1,0 +1,52 @@
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <h3>Админ-панель (демо)</h3>
+        <p class="text-muted">
+            Здесь можно показать, как вы управляете товарами и пересчитываете похожесть.
+        </p>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Пересчитать item-item похожесть</h5>
+                <p class="card-text small text-muted">
+                    Запускает batch-скрипт (в реальном проекте — cron/worker).
+                    В демо просто кнопка, которая вызывает <code>POST /admin/rebuild-sims</code> (мы можем повесить там
+                    <code>npm run batch:sims</code> или свой сервис).
+                </p>
+                <button class="btn btn-outline-primary" id="rebuildSimsBtn">Пересчитать</button>
+                <div class="mt-2 small text-muted" id="rebuildStatus"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Быстрый просмотр товаров</h5>
+                <button class="btn btn-sm btn-outline-secondary mb-2" id="adminLoadProductsBtn">
+                    Загрузить список (/api/products)
+                </button>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Название</th>
+                                <th>Категория</th>
+                                <th>Цена</th>
+                                <th>Рейтинг</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminProductsBody">
+                            <tr>
+                                <td colspan="5" class="text-muted">Пока данных нет</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

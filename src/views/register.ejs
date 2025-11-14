@@ -1,0 +1,35 @@
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <h3 class="mb-3">Регистрация</h3>
+
+        <div class="alert" id="registerInfo" style="display:none;"></div>
+
+        <div class="mb-2">
+            <label class="form-label">Email</label>
+            <input id="reg_email" class="form-control" placeholder="you@example.com">
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">Имя</label>
+            <input id="reg_name" class="form-control" placeholder="Имя Фамилия">
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label">Пароль</label>
+            <input id="reg_password" type="password" class="form-control" placeholder="не менее 8 символов">
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Сегменты (опционально)</label>
+            <input id="reg_segments" class="form-control" placeholder="electronics, home">
+            <div class="form-text">Укажите интересы, чтобы улучшить рекомендации.</div>
+        </div>
+
+        <button class="btn btn-primary w-100 mb-2" id="regBtn">Создать аккаунт</button>
+        <a class="btn btn-link w-100" href="/login">Уже есть аккаунт? Войти</a>
+
+        <div class="mt-3 small text-muted">
+            Форма отправляет <code>POST /auth/register</code> (email, name, password, segments[]).
+        </div>
+    </div>
+</div>

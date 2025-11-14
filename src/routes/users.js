@@ -37,6 +37,8 @@
  *   get:
  *     summary: Get user history (interactions + orders)
  *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -54,10 +56,12 @@
 
 const { Router } = require('express');
 const { createUser, getUser, getUserHistory } = require('../controllers/api');
+const { authRequired } = require('../middleware/auth');
+
 const router = Router();
 
-router.post('/', createUser);          // регистрация
-router.get('/:id', getUser);           // профиль
-router.get('/:id/history', getUserHistory); // 💥 история (взаим-я + заказы)
+router.post('/', createUser);          // registration
+router.get('/:id', getUser);           // profile lookup
+router.get('/:id/history', authRequired, getUserHistory); // owner-only history
 
 module.exports = router;

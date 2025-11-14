@@ -6,7 +6,7 @@ const Order = require('../models/Order');
 const ItemSimilarity = require('../models/ItemSimilarity');
 
 /* ===================== USERS ===================== */
-// POST /api/users  (регистрация без пароля — по требованиям нужна регистрация/профиль)
+// POST /api/users  (СЂРµРіРёСЃС‚СЂР°С†РёСЏ Р±РµР· РїР°СЂРѕР»СЏ вЂ” РїРѕ С‚СЂРµР±РѕРІР°РЅРёСЏРј РЅСѓР¶РЅР° СЂРµРіРёСЃС‚СЂР°С†РёСЏ/РїСЂРѕС„РёР»СЊ)
 exports.createUser = async (req, res) => {
     try {
         const { id, email, name, segments = [] } = req.body;
@@ -30,10 +30,13 @@ exports.getUser = async (req, res) => {
     }
 };
 
-// GET /api/users/:id/history  (💥 Требование №3: история взаимодействий + покупок)
+// GET /api/users/:id/history  (рџ’Ґ РўСЂРµР±РѕРІР°РЅРёРµ в„–3: РёСЃС‚РѕСЂРёСЏ РІР·Р°РёРјРѕРґРµР№СЃС‚РІРёР№ + РїРѕРєСѓРїРѕРє)
 exports.getUserHistory = async (req, res) => {
     try {
         const { id } = req.params;
+        if (req.auth?.userId && req.auth.userId !== id) {
+            return res.status(403).json({ ok: false, error: 'Access denied' });
+        }
         const limit = Math.min(Number(req.query.limit) || 50, 200);
         const since = req.query.since ? new Date(req.query.since) : null;
 
@@ -56,7 +59,7 @@ exports.getUserHistory = async (req, res) => {
             ok: true,
             data: {
                 interactions, // views/likes/add_to_cart/purchase
-                orders        // история покупок
+                orders        // РёСЃС‚РѕСЂРёСЏ РїРѕРєСѓРїРѕРє
             }
         });
     } catch (e) {
@@ -65,7 +68,7 @@ exports.getUserHistory = async (req, res) => {
 };
 
 /* ===================== PRODUCTS ===================== */
-// POST /api/products  (админ: создать)
+// POST /api/products  (Р°РґРјРёРЅ: СЃРѕР·РґР°С‚СЊ)
 exports.createProduct = async (req, res) => {
     try {
         const { id, name, description = '', categoryId, categoryName, price, brand, rating, attrs } = req.body;
@@ -78,7 +81,7 @@ exports.createProduct = async (req, res) => {
     }
 };
 
-// GET /api/products  (список + поиск + фильтры)
+// GET /api/products  (СЃРїРёСЃРѕРє + РїРѕРёСЃРє + С„РёР»СЊС‚СЂС‹)
 exports.listProducts = async (req, res) => {
     try {
         const { q, categoryId, minPrice, maxPrice, sort } = req.query;
@@ -92,7 +95,7 @@ exports.listProducts = async (req, res) => {
         }
 
         let cursor = Product.find(filter).select('name price brand rating categoryId categoryName createdAt');
-        // сортировки: rating_desc, price_asc, price_desc, newest
+        // СЃРѕСЂС‚РёСЂРѕРІРєРё: rating_desc, price_asc, price_desc, newest
         if (sort === 'rating_desc') cursor = cursor.sort({ rating: -1 });
         else if (sort === 'price_asc') cursor = cursor.sort({ price: 1 });
         else if (sort === 'price_desc') cursor = cursor.sort({ price: -1 });
@@ -116,7 +119,7 @@ exports.getProduct = async (req, res) => {
     }
 };
 
-// PUT /api/products/:id (админ: обновить)
+// PUT /api/products/:id (Р°РґРјРёРЅ: РѕР±РЅРѕРІРёС‚СЊ)
 exports.updateProduct = async (req, res) => {
     try {
         const prod = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true }).lean();
@@ -127,7 +130,7 @@ exports.updateProduct = async (req, res) => {
     }
 };
 
-// DELETE /api/products/:id (админ: удалить)
+// DELETE /api/products/:id (Р°РґРјРёРЅ: СѓРґР°Р»РёС‚СЊ)
 exports.deleteProduct = async (req, res) => {
     try {
         const r = await Product.findByIdAndDelete(req.params.id).lean();
@@ -142,9 +145,15 @@ exports.deleteProduct = async (req, res) => {
 // POST /api/interactions
 exports.createInteraction = async (req, res) => {
     try {
-        const { userId, productId, type, value } = req.body;
-        if (!userId || !productId || !type) return res.status(400).json({ ok: false, error: 'userId, productId, type required' });
-        const doc = await Interaction.create({ userId, productId, type, value, ts: new Date() });
+        const tokenUserId = req.auth?.userId;
+        const bodyUserId = req.body.userId;
+        if (!tokenUserId) return res.status(401).json({ ok: false, error: 'Auth required' });
+        if (bodyUserId && bodyUserId !== tokenUserId) {
+            return res.status(403).json({ ok: false, error: 'userId mismatch' });
+        }
+        const { productId, type, value } = req.body;
+        if (!productId || !type) return res.status(400).json({ ok: false, error: 'productId and type required' });
+        const doc = await Interaction.create({ userId: tokenUserId, productId, type, value, ts: new Date() });
         return res.status(201).json({ ok: true, data: doc });
     } catch (e) {
         return res.status(400).json({ ok: false, error: e.message });
@@ -152,18 +161,24 @@ exports.createInteraction = async (req, res) => {
 };
 
 /* ===================== ORDERS ===================== */
-// POST /api/orders/checkout   (упрощенный чекаут)
+// POST /api/orders/checkout   (СѓРїСЂРѕС‰РµРЅРЅС‹Р№ С‡РµРєР°СѓС‚)
 exports.checkout = async (req, res) => {
     try {
-        const { userId, items } = req.body; // [{productId, qty, price}]
-        if (!userId || !Array.isArray(items) || !items.length) {
-            return res.status(400).json({ ok: false, error: 'userId and items[] required' });
+        const tokenUserId = req.auth?.userId;
+        const bodyUserId = req.body.userId;
+        if (!tokenUserId) return res.status(401).json({ ok: false, error: 'Auth required' });
+        if (bodyUserId && bodyUserId !== tokenUserId) {
+            return res.status(403).json({ ok: false, error: 'userId mismatch' });
+        }
+        const { items } = req.body; // [{productId, qty, price}]
+        if (!Array.isArray(items) || !items.length) {
+            return res.status(400).json({ ok: false, error: 'items[] required' });
         }
         const total = items.reduce((s, it) => s + it.qty * it.price, 0);
         const orderId = `o_${Date.now()}`;
         const order = await Order.create({
             _id: orderId,
-            userId,
+            userId: tokenUserId,
             items,
             total,
             status: 'paid',
@@ -171,7 +186,7 @@ exports.checkout = async (req, res) => {
         });
         // можно дополнительно записать interaction purchase по каждому item
         for (const it of items) {
-            await Interaction.create({ userId, productId: it.productId, type: 'purchase', value: 6, ts: new Date() });
+            await Interaction.create({ userId: tokenUserId, productId: it.productId, type: 'purchase', value: 6, ts: new Date() });
         }
         return res.status(201).json({ ok: true, data: order });
     } catch (e) {
@@ -179,12 +194,16 @@ exports.checkout = async (req, res) => {
     }
 };
 
-// GET /api/orders/me?userId=u_100
+// GET /api/orders/me (current user)
 exports.myOrders = async (req, res) => {
     try {
-        const { userId } = req.query;
-        if (!userId) return res.status(400).json({ ok: false, error: 'userId required' });
-        const orders = await Order.find({ userId }).sort({ createdAt: -1 }).lean();
+        const tokenUserId = req.auth?.userId;
+        const requested = req.query.userId;
+        if (!tokenUserId) return res.status(401).json({ ok: false, error: 'Auth required' });
+        if (requested && requested !== tokenUserId) {
+            return res.status(403).json({ ok: false, error: 'userId mismatch' });
+        }
+        const orders = await Order.find({ userId: tokenUserId }).sort({ createdAt: -1 }).lean();
         return res.json({ ok: true, data: orders });
     } catch (e) {
         return res.status(400).json({ ok: false, error: e.message });
@@ -197,10 +216,10 @@ exports.similarProducts = async (req, res) => {
     try {
         const row = await ItemSimilarity.findOne({ productId: req.params.id }).lean();
         if (!row) return res.json({ ok: true, data: [] });
-        // подтянем карточки для наглядности
+        // РїРѕРґС‚СЏРЅРµРј РєР°СЂС‚РѕС‡РєРё РґР»СЏ РЅР°РіР»СЏРґРЅРѕСЃС‚Рё
         const ids = row.neighbors.map(n => n.productId);
         const prods = await Product.find({ _id: { $in: ids } }).select('name price brand rating categoryName').lean();
-        // вернём с сортировкой по sim
+        // РІРµСЂРЅС‘Рј СЃ СЃРѕСЂС‚РёСЂРѕРІРєРѕР№ РїРѕ sim
         const byId = new Map(prods.map(p => [p._id, p]));
         const data = row.neighbors.map(n => ({ sim: n.sim, product: byId.get(n.productId) || { _id: n.productId } }));
         return res.json({ ok: true, data });
@@ -210,23 +229,26 @@ exports.similarProducts = async (req, res) => {
 };
 
 // GET /api/recommendations/:userId
-// simple: собираем последние N интеракций юзера и возвращаем объединение соседей
+// simple: СЃРѕР±РёСЂР°РµРј РїРѕСЃР»РµРґРЅРёРµ N РёРЅС‚РµСЂР°РєС†РёР№ СЋР·РµСЂР° Рё РІРѕР·РІСЂР°С‰Р°РµРј РѕР±СЉРµРґРёРЅРµРЅРёРµ СЃРѕСЃРµРґРµР№
 exports.recommendForUser = async (req, res) => {
     try {
         const { userId } = req.params;
+        if (req.auth?.userId && req.auth.userId !== userId) {
+            return res.status(403).json({ ok: false, error: 'Access denied' });
+        }
         const N = Math.min(Number(req.query.n) || 20, 100);
 
-        // последние 50 взаимодействий
+        // РїРѕСЃР»РµРґРЅРёРµ 50 РІР·Р°РёРјРѕРґРµР№СЃС‚РІРёР№
         const last = await Interaction.find({ userId }).sort({ ts: -1 }).limit(50).lean();
         const viewed = new Set(last.map(x => x.productId));
 
-        // собрать соседей
+        // СЃРѕР±СЂР°С‚СЊ СЃРѕСЃРµРґРµР№
         const uniq = new Map(); // productId -> score
         for (const it of last) {
             const simRow = await ItemSimilarity.findOne({ productId: it.productId }).lean();
             if (!simRow) continue;
             for (const nb of simRow.neighbors) {
-                if (viewed.has(nb.productId)) continue; // исключить уже виденные/купленные (упрощенно)
+                if (viewed.has(nb.productId)) continue; // РёСЃРєР»СЋС‡РёС‚СЊ СѓР¶Рµ РІРёРґРµРЅРЅС‹Рµ/РєСѓРїР»РµРЅРЅС‹Рµ (СѓРїСЂРѕС‰РµРЅРЅРѕ)
                 const add = nb.sim * (it.value || 1);
                 uniq.set(nb.productId, (uniq.get(nb.productId) || 0) + add);
             }

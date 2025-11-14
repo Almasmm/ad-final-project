@@ -27,6 +27,12 @@
  *   post:
  *     summary: Create product (admin)
  *     tags: [Products]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ProductCreate'
  *     responses:
  *       201: { description: Created }
  *
@@ -49,6 +55,12 @@
  *         name: id
  *         required: true
  *         schema: { type: string }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ProductUpdate'
  *     responses:
  *       200: { description: OK }
  *   delete:
@@ -61,55 +73,6 @@
  *         schema: { type: string }
  *     responses:
  *       200: { description: OK }
- *
- * /api/products/{id}/similar:
- *   get:
- *     summary: Get similar products
- *     tags: [Products]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema: { type: string }
- *     responses:
- *       200: { description: OK }
- */
-
-/**
- * @openapi
- * /api/products:
- *   get:
- *     summary: List products (search/filter/sort)
- *     tags: [Products]
- *     parameters: ...
- *     responses: { 200: { description: OK } }
- *   post:
- *     summary: Create product (admin)
- *     tags: [Products]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/ProductCreate'
- *     responses:
- *       201: { description: Created }
- *
- * /api/products/{id}:
- *   get: ...
- *   put:
- *     summary: Update product (admin)
- *     tags: [Products]
- *     parameters: ...
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/ProductUpdate'
- *     responses:
- *       200: { description: OK }
- *   delete: ...
  */
 
 

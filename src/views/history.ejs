@@ -1,0 +1,51 @@
+<div class="row">
+    <div class="col-12">
+        <h3 class="mb-3">Моя история</h3>
+        <p class="text-muted">
+            userId: <code><%= userId %></code>.
+            Данные берутся из <code>GET /api/users/{id}/history</code>.
+        </p>
+    </div>
+
+    <div class="col-md-6">
+        <h5>Взаимодействия</h5>
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>Время</th>
+                    <th>Товар</th>
+                    <th>Тип</th>
+                    <th>value</th>
+                </tr>
+            </thead>
+            <tbody id="history_interactions">
+                <tr>
+                    <td colspan="4" class="text-muted">Загрузка...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="col-md-6">
+        <h5>Заказы</h5>
+        <table class="table table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>Дата</th>
+                    <th>Order ID</th>
+                    <th>Сумма</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody id="history_orders">
+                <tr>
+                    <td colspan="4" class="text-muted">Загрузка...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    window.__USER_ID__ = "<%= userId %>";
+</script>

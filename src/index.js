@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const { spawn } = require('child_process');
 
 const { connectDB } = require('./config/db');
 const healthRoutes = require('./routes/health');
@@ -14,21 +15,60 @@ const swaggerUi = require('swagger-ui-express');
 const { swaggerSpec } = require('./config/swagger');
 const authRoutes = require('./routes/auth');
 
+
 // src/index.js (добавления к твоему файлу)
 const path = require('path');
 const session = require('express-session');
+const expressLayouts = require('express-ejs-layouts');
 
 const app = express();
+const buildSimsScript = path.join(__dirname, 'scripts', 'build_sims.js');
+let isRebuildingSims = false;
+
+function runBuildSims() {
+    return new Promise((resolve, reject) => {
+        const child = spawn(process.execPath, [buildSimsScript], {
+            env: process.env,
+            stdio: ['ignore', 'pipe', 'pipe'],
+        });
+
+        child.stdout.on('data', (chunk) => process.stdout.write(`[build_sims] ${chunk}`));
+        child.stderr.on('data', (chunk) => process.stderr.write(`[build_sims] ${chunk}`));
+        child.once('error', reject);
+        child.once('close', (code) => {
+            if (code === 0) return resolve();
+            reject(new Error(`build_sims exited with code ${code}`));
+        });
+    });
+}
 
 // EJS + public
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
+app.set('layout', 'layout');   // views/layout.ejs
+app.use(expressLayouts);
 app.use(express.static(path.join(__dirname, 'public')));
 
 // middlewares
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
+
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'dev_secret',
+    resave: false,
+    saveUninitialized: false,
+}));
+
+app.use((req, res, next) => {
+    req.ctx = {
+        userId: req.session.userId || null,
+        email: req.session.email || null,
+    };
+    res.locals.userId = req.ctx.userId;
+    res.locals.email = req.ctx.email;
+    next();
+});
 
 // routes
 app.use('/', healthRoutes);
@@ -40,32 +80,35 @@ app.use('/api', recommendationRoutes); // /recommendations/:userId и /products/
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/auth', authRoutes);
 
-// простая сессия (для демо UI; JWT остаётся для API)
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'dev_secret',
-    resave: false,
-    saveUninitialized: false,
-}));
-
-// вспомогательный middleware: положим userId из токена (если хранится в сессии)
-app.use((req, _res, next) => {
-    // в демо: после логина положим userId/email сюда
-    req.ctx = { userId: req.session.userId || null, email: req.session.email || null };
-    next();
+app.post('/admin/rebuild-sims', async (_req, res) => {
+    if (isRebuildingSims) {
+        return res.status(409).json({ ok: false, message: 'Rebuild already in progress' });
+    }
+    isRebuildingSims = true;
+    try {
+        await runBuildSims();
+        res.json({ ok: true });
+    } catch (err) {
+        console.error('rebuild-sims error', err);
+        res.status(500).json({ ok: false, message: err.message || 'Failed to rebuild similarities' });
+    } finally {
+        isRebuildingSims = false;
+    }
 });
+
 
 // ======== PAGES (EJS) ========
 app.get('/', (req, res) => {
-    res.render('home', { userId: req.ctx.userId });
+    res.render('home', { title: 'Главная', userId: req.ctx.userId });
 });
 
-app.get('/login', (_req, res) => res.render('login'));
+app.get('/login', (_req, res) => res.render('login', { title: 'Вход' }));
 app.get('/register', (_req, res) => res.render('register'));
 app.get('/forgot', (_req, res) => res.render('forgot'));
 app.get('/reset', (_req, res) => res.render('reset'));
 
 app.get('/product/:id', (req, res) => {
-    res.render('product', { id: req.params.id, userId: req.ctx.userId });
+    res.render('product', { title: 'Товар', id: req.params.id, userId: req.ctx.userId });
 });
 
 app.get('/me/history', (req, res) => {
@@ -88,6 +131,13 @@ app.post('/_session/set', (req, res) => {
     req.session.userId = userId || null;
     req.session.email = email || null;
     res.json({ ok: true });
+});
+
+// generic error handler for API routes
+app.use((err, _req, res, _next) => {
+    console.error(err);
+    if (res.headersSent) return;
+    res.status(500).json({ ok: false, error: 'Internal error' });
 });
 
 // boot

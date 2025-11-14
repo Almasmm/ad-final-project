@@ -1,0 +1,20 @@
+<div class="row">
+    <div class="col-12">
+        <h3 class="mb-3">Персональные рекомендации</h3>
+        <p class="text-muted">
+            userId: <code><%= userId %></code>.
+            Источник: <code>GET /api/recommendations/{userId}</code> (item-based CF).
+        </p>
+    </div>
+
+    <div class="col-12">
+        <div id="reco_list" class="row g-3">
+            <div class="col-12 text-muted">Загрузка...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.__USER_ID__ = "<%= userId %>";
+    window.__RECO_PAGE__ = true;
+</script>
