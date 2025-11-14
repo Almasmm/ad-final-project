@@ -99,30 +99,30 @@ app.post('/admin/rebuild-sims', async (_req, res) => {
 
 // ======== PAGES (EJS) ========
 app.get('/', (req, res) => {
-    res.render('home', { title: 'Главная', userId: req.ctx.userId });
+    res.render('home', { title: 'Каталог', userId: req.ctx.userId, page: 'home' });
 });
 
-app.get('/login', (_req, res) => res.render('login', { title: 'Вход' }));
-app.get('/register', (_req, res) => res.render('register'));
-app.get('/forgot', (_req, res) => res.render('forgot'));
-app.get('/reset', (_req, res) => res.render('reset'));
+app.get('/login', (_req, res) => res.render('login', { title: 'Вход', page: 'login' }));
+app.get('/register', (_req, res) => res.render('register', { title: 'Регистрация', page: 'register' }));
+app.get('/forgot', (_req, res) => res.render('forgot', { title: 'Восстановление пароля', page: 'forgot' }));
+app.get('/reset', (_req, res) => res.render('reset', { title: 'Сброс пароля', page: 'reset' }));
 
 app.get('/product/:id', (req, res) => {
-    res.render('product', { title: 'Товар', id: req.params.id, userId: req.ctx.userId });
+    res.render('product', { title: 'Товар', id: req.params.id, userId: req.ctx.userId, page: 'product' });
 });
 
 app.get('/me/history', (req, res) => {
     if (!req.ctx.userId) return res.redirect('/login');
-    res.render('history', { userId: req.ctx.userId });
+    res.render('history', { userId: req.ctx.userId, email: req.ctx.email, page: 'history' });
 });
 
 app.get('/me/reco', (req, res) => {
     if (!req.ctx.userId) return res.redirect('/login');
-    res.render('reco', { userId: req.ctx.userId });
+    res.render('reco', { userId: req.ctx.userId, email: req.ctx.email, page: 'reco' });
 });
 
 app.get('/admin', (req, res) => {
-    res.render('admin', { userId: req.ctx.userId });
+    res.render('admin', { userId: req.ctx.userId, page: 'admin' });
 });
 
 // auth «фиксация» сессии после успешного /auth/login

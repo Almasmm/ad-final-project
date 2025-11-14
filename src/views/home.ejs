@@ -1,33 +1,60 @@
-    <div class="row g-3 align-items-end mb-4">
-        <div class="col-md-5">
-            <label class="form-label">Поиск</label>
-            <input id="q" class="form-control" placeholder="keyboard, mouse...">
+<div class="card card-body shadow-sm mb-4">
+    <div class="d-flex justify-content-between flex-wrap mb-3">
+        <div>
+            <h4 class="mb-1">Поиск по каталогу</h4>
+            <p class="text-muted small mb-0">Введите несколько слов, выберите категорию и сортировку — мы подберём товары.</p>
         </div>
-        <div class="col-md-3">
+    </div>
+    <div class="row g-3">
+        <div class="col-lg-4 col-md-6">
+            <label class="form-label">Что ищем</label>
+            <input id="q" class="form-control" placeholder="например: keyboard, mx, mouse">
+        </div>
+        <div class="col-lg-3 col-md-6">
             <label class="form-label">Категория</label>
-            <input id="categoryId" class="form-control" placeholder="c_10, c_11...">
-        </div>
-        <div class="col-md-2">
-            <label class="form-label">Сортировка</label>
-            <select id="sort" class="form-select">
-                <option value="">—</option>
-                <option value="rating_desc">rating_desc</option>
-                <option value="price_asc">price_asc</option>
-                <option value="price_desc">price_desc</option>
-                <option value="newest">newest</option>
+            <select id="categoryId" class="form-select">
+                <option value="">Все категории</option>
+                <option value="c_10">Клавиатуры</option>
+                <option value="c_11">Мыши</option>
+                <option value="c_12">Мониторы</option>
+                <option value="c_13">Аудио</option>
+                <option value="c_14">Аксессуары</option>
             </select>
         </div>
-        <div class="col-md-2">
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label">Сортировка</label>
+            <select id="sort" class="form-select">
+                <option value="">Без сортировки</option>
+                <option value="rating_desc">Лучший рейтинг</option>
+                <option value="price_asc">Цена: сначала дешёвые</option>
+                <option value="price_desc">Цена: сначала дорогие</option>
+                <option value="newest">Самые новые</option>
+            </select>
+        </div>
+        <div class="col-lg-2 col-md-6 d-flex align-items-end">
             <button class="btn btn-primary w-100" id="searchBtn">Найти</button>
         </div>
     </div>
+</div>
 
-    <h5 class="mb-3">Каталог</h5>
+<section class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Каталог</h5>
+    </div>
     <div id="products" class="row g-3"></div>
+</section>
 
-    <% if (userId) { %>
-        <hr class="my-4">
-        <h5>Рекомендовано вам</h5>
+<% if (userId) { %>
+    <section class="card card-body shadow-sm">
+        <div class="d-flex justify-content-between flex-wrap mb-3">
+            <div>
+                <h5 class="mb-1">Персональные рекомендации</h5>
+                <p class="text-muted small mb-0">Показываем товары на основе просмотров, лайков и заказов.</p>
+            </div>
+            <a class="btn btn-sm btn-outline-secondary mt-2 mt-md-0" href="/me/reco">Все рекомендации</a>
+        </div>
         <div id="reco" class="row g-3"></div>
+        <p id="recoEmpty" class="text-muted mb-0"></p>
         <script>window.__USER_ID__ = "<%= userId %>";</script>
-        <% } %>
+    </section>
+<% } %>

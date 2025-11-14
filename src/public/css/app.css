@@ -1,7 +1,63 @@
 body {
-    background-color: #f8f9fa;
+    background-color: #f5f6fb;
+    min-height: 100vh;
 }
 
-.card-title {
-    font-size: 0.98rem;
+.navbar .btn.active-link,
+.navbar .btn.active-link:focus {
+    color: #fff;
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.nav-button-group .btn {
+    border-radius: 999px;
+    min-width: 90px;
+}
+
+.card {
+    border: none;
+    border-radius: 0.75rem;
+}
+
+.card.shadow-sm {
+    box-shadow: 0 0.25rem 0.8rem rgba(0, 0, 0, 0.05);
+}
+
+#products .card,
+#reco .card,
+#reco_list .card,
+#similar .card {
+    border-radius: 0.85rem;
+}
+
+.product-price {
+    font-size: 1.05rem;
+    font-weight: 600;
+}
+
+.badge-category {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.auth-card .btn-link {
+    text-decoration: none;
+}
+
+.auth-card .btn-link:hover {
+    text-decoration: underline;
+}
+
+.table th {
+    font-weight: 600;
+}
+
+.table thead {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.table td {
+    vertical-align: middle;
 }

@@ -1,34 +1,27 @@
 <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
-        <h3 class="mb-3">Сброс пароля</h3>
+        <div class="card card-body shadow-sm auth-card">
+            <h3 class="mb-3">Сброс пароля</h3>
 
-        <p class="small text-muted">
-            Если пришли со страницы восстановления, поля могли заполниться автоматически.
-            Проверьте email и demoCode, затем введите новый пароль.
-        </p>
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input id="reset_email" class="form-control" placeholder="you@example.com">
+            </div>
 
-        <div class="mb-2">
-            <label class="form-label">Email</label>
-            <input id="reset_email" class="form-control" placeholder="you@example.com">
-        </div>
+            <div class="mb-3">
+                <label class="form-label">Код из письма</label>
+                <input id="reset_code" class="form-control" placeholder="например, 123456">
+            </div>
 
-        <div class="mb-2">
-            <label class="form-label">Код (demoCode)</label>
-            <input id="reset_code" class="form-control" placeholder="например, 123456">
-        </div>
+            <div class="mb-3">
+                <label class="form-label">Новый пароль</label>
+                <input id="reset_new_password" type="password" class="form-control" placeholder="минимум 8 символов">
+            </div>
 
-        <div class="mb-3">
-            <label class="form-label">Новый пароль</label>
-            <input id="reset_new_password" type="password" class="form-control" placeholder="минимум 6 символов">
-        </div>
+            <button class="btn btn-primary w-100 mb-2" id="resetBtn">Сменить пароль</button>
+            <a class="btn btn-link w-100" href="/login">Вернуться к входу</a>
 
-        <button class="btn btn-primary w-100 mb-2" id="resetBtn">Сменить пароль</button>
-        <a class="btn btn-link w-100" href="/login">Вернуться к входу</a>
-
-        <div class="alert" id="resetInfo" style="display:none;"></div>
-
-        <div class="mt-3 small text-muted">
-            Вызывает <code>POST /auth/reset</code> (email, code, newPassword).
+            <div class="alert" id="resetInfo" style="display:none;"></div>
         </div>
     </div>
 </div>

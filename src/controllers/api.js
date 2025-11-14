@@ -84,10 +84,14 @@ exports.createProduct = async (req, res) => {
 // GET /api/products  (СЃРїРёСЃРѕРє + РїРѕРёСЃРє + С„РёР»СЊС‚СЂС‹)
 exports.listProducts = async (req, res) => {
     try {
-        const { q, categoryId, minPrice, maxPrice, sort } = req.query;
+        const { q, categoryId, categoryName, minPrice, maxPrice, sort } = req.query;
         const filter = {};
         if (q) filter.$text = { $search: q };
-        if (categoryId) filter.categoryId = categoryId;
+        if (categoryId) {
+            filter.categoryId = categoryId;
+        } else if (categoryName) {
+            filter.categoryName = categoryName;
+        }
         if (minPrice || maxPrice) {
             filter.price = {};
             if (minPrice) filter.price.$gte = Number(minPrice);
@@ -102,6 +106,7 @@ exports.listProducts = async (req, res) => {
         else if (sort === 'newest') cursor = cursor.sort({ createdAt: -1 });
 
         const items = await cursor.limit(100).lean();
+        res.set('Cache-Control', 'no-store');
         return res.json({ ok: true, data: items });
     } catch (e) {
         return res.status(400).json({ ok: false, error: e.message });
@@ -238,26 +243,31 @@ exports.recommendForUser = async (req, res) => {
         }
         const N = Math.min(Number(req.query.n) || 20, 100);
 
-        // РїРѕСЃР»РµРґРЅРёРµ 50 РІР·Р°РёРјРѕРґРµР№СЃС‚РІРёР№
         const last = await Interaction.find({ userId }).sort({ ts: -1 }).limit(50).lean();
-        const viewed = new Set(last.map(x => x.productId));
+        if (!last.length) {
+            return res.json({ ok: true, data: [] });
+        }
+        const viewed = new Set(last.map((x) => x.productId));
 
-        // СЃРѕР±СЂР°С‚СЊ СЃРѕСЃРµРґРµР№
-        const uniq = new Map(); // productId -> score
+        const uniq = new Map();
         for (const it of last) {
             const simRow = await ItemSimilarity.findOne({ productId: it.productId }).lean();
             if (!simRow) continue;
             for (const nb of simRow.neighbors) {
-                if (viewed.has(nb.productId)) continue; // РёСЃРєР»СЋС‡РёС‚СЊ СѓР¶Рµ РІРёРґРµРЅРЅС‹Рµ/РєСѓРїР»РµРЅРЅС‹Рµ (СѓРїСЂРѕС‰РµРЅРЅРѕ)
+                if (viewed.has(nb.productId)) continue;
                 const add = nb.sim * (it.value || 1);
                 uniq.set(nb.productId, (uniq.get(nb.productId) || 0) + add);
             }
         }
 
+        if (!uniq.size) {
+            return res.json({ ok: true, data: [] });
+        }
+
         const scored = Array.from(uniq.entries()).sort((a, b) => b[1] - a[1]).slice(0, N);
         const ids = scored.map(([pid]) => pid);
         const prods = await Product.find({ _id: { $in: ids } }).select('name price brand rating categoryName').lean();
-        const byId = new Map(prods.map(p => [p._id, p]));
+        const byId = new Map(prods.map((p) => [p._id, p]));
         const data = scored.map(([pid, score]) => ({ score, product: byId.get(pid) || { _id: pid } }));
 
         return res.json({ ok: true, data });

@@ -40,7 +40,7 @@ async function sendResetEmail({ to, code, expiresAt }) {
     const tx = buildTransporter();
     const subject = 'Код для восстановления пароля';
     const text = [
-        'Вы запросили восстановление пароля в AD Shop.',
+        'Вы запросили восстановление пароля в Tenyz Market.',
         `Код: ${code}`,
         `Он действителен до ${expiresAt.toLocaleString()}.`,
         'Если вы не запрашивали сброс, просто игнорируйте это письмо.',
