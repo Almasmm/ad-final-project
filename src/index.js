@@ -11,12 +11,14 @@ const productRoutes = require('./routes/products');
 const interactionRoutes = require('./routes/interactions');
 const orderRoutes = require('./routes/orders');
 const recommendationRoutes = require('./routes/recommendations');
+const recommendRoutes = require('./routes/recommend');
 const swaggerUi = require('swagger-ui-express');
 const { swaggerSpec } = require('./config/swagger');
 const authRoutes = require('./routes/auth');
+const { requireRole } = require('./middleware/auth');
 
 
-// src/index.js (добавления к твоему файлу)
+// src/index.js (custom additions)
 const path = require('path');
 const session = require('express-session');
 const expressLayouts = require('express-ejs-layouts');
@@ -64,9 +66,13 @@ app.use((req, res, next) => {
     req.ctx = {
         userId: req.session.userId || null,
         email: req.session.email || null,
+        role: req.session.role || null,
+        emailVerified: typeof req.session.emailVerified === 'boolean' ? req.session.emailVerified : null,
     };
     res.locals.userId = req.ctx.userId;
     res.locals.email = req.ctx.email;
+    res.locals.role = req.ctx.role;
+    res.locals.emailVerified = req.ctx.emailVerified;
     next();
 });
 
@@ -76,11 +82,12 @@ app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/interactions', interactionRoutes);
 app.use('/api/orders', orderRoutes);
-app.use('/api', recommendationRoutes); // /recommendations/:userId и /products/:id/similar
+app.use('/api', recommendationRoutes); // /recommendations/:userId and /products/:id/similar
+app.use('/recommend', recommendRoutes);
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/auth', authRoutes);
 
-app.post('/admin/rebuild-sims', async (_req, res) => {
+app.post('/admin/rebuild-sims', requireRole('admin'), async (_req, res) => {
     if (isRebuildingSims) {
         return res.status(409).json({ ok: false, message: 'Rebuild already in progress' });
     }
@@ -99,16 +106,20 @@ app.post('/admin/rebuild-sims', async (_req, res) => {
 
 // ======== PAGES (EJS) ========
 app.get('/', (req, res) => {
-    res.render('home', { title: 'Каталог', userId: req.ctx.userId, page: 'home' });
+    res.render('home', { title: 'Catalog', userId: req.ctx.userId, page: 'home' });
 });
 
-app.get('/login', (_req, res) => res.render('login', { title: 'Вход', page: 'login' }));
-app.get('/register', (_req, res) => res.render('register', { title: 'Регистрация', page: 'register' }));
-app.get('/forgot', (_req, res) => res.render('forgot', { title: 'Восстановление пароля', page: 'forgot' }));
-app.get('/reset', (_req, res) => res.render('reset', { title: 'Сброс пароля', page: 'reset' }));
+app.get('/search', (req, res) => {
+    res.render('search', { title: 'Search products', userId: req.ctx.userId, page: 'search' });
+});
+app.get('/login', (_req, res) => res.render('login', { title: 'Sign in', page: 'login' }));
+app.get('/register', (_req, res) => res.render('register', { title: 'Sign up', page: 'register' }));
+app.get('/forgot', (_req, res) => res.render('forgot', { title: 'Forgot password', page: 'forgot' }));
+app.get('/reset', (_req, res) => res.render('reset', { title: 'Change password', page: 'reset' }));
+app.get('/verify', (_req, res) => res.render('verify', { title: '��������� email', page: 'verify' }));
 
 app.get('/product/:id', (req, res) => {
-    res.render('product', { title: 'Товар', id: req.params.id, userId: req.ctx.userId, page: 'product' });
+    res.render('product', { title: 'Product', id: req.params.id, userId: req.ctx.userId, page: 'product' });
 });
 
 app.get('/me/history', (req, res) => {
@@ -121,15 +132,33 @@ app.get('/me/reco', (req, res) => {
     res.render('reco', { userId: req.ctx.userId, email: req.ctx.email, page: 'reco' });
 });
 
-app.get('/admin', (req, res) => {
-    res.render('admin', { userId: req.ctx.userId, page: 'admin' });
+app.get('/me/wishlist', (req, res) => {
+    if (!req.ctx.userId) return res.redirect('/login');
+    res.render('wishlist', { userId: req.ctx.userId, email: req.ctx.email, page: 'wishlist' });
 });
 
-// auth «фиксация» сессии после успешного /auth/login
+app.get('/me/profile', (req, res) => {
+    if (!req.ctx.userId) return res.redirect('/login');
+    res.render('profile', {
+        userId: req.ctx.userId,
+        email: req.ctx.email,
+        role: req.ctx.role,
+        page: 'profile',
+    });
+});
+
+app.get('/admin', (req, res) => {
+    if (!req.ctx.userId) return res.redirect('/login');
+    res.render('admin', { userId: req.ctx.userId, page: 'admin', isAdmin: req.ctx.role === 'admin' });
+});
+
+// auth session sync after successful /auth/login
 app.post('/_session/set', (req, res) => {
-    const { userId, email } = req.body || {};
+    const { userId, email, role, emailVerified } = req.body || {};
     req.session.userId = userId || null;
     req.session.email = email || null;
+    req.session.role = role || null;
+    req.session.emailVerified = typeof emailVerified === 'boolean' ? emailVerified : null;
     res.json({ ok: true });
 });
 
@@ -150,3 +179,7 @@ const URI = process.env.MONGO_URI;
         console.log(`🚀 Server running on http://localhost:${PORT}`);
     });
 })();
+
+
+
+

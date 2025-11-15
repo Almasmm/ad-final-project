@@ -1,0 +1,71 @@
+<%
+    const headingText = typeof heading !== 'undefined' ? heading : 'Catalog';
+    const subtitleText = typeof subtitle !== 'undefined'
+        ? subtitle
+        : 'Filter by category, price, rating, or tags to find the right device.';
+    const buttonLabel = typeof submitLabel !== 'undefined' ? submitLabel : 'Search';
+    const hintText = typeof hint !== 'undefined' ? hint : 'Example: mx, mouse, keyboard';
+    const showLink = !!(typeof showSearchLink !== 'undefined' ? showSearchLink : false);
+%>
+<form id="catalogForm" class="card card-body shadow-sm mb-4">
+    <div class="d-flex justify-content-between flex-wrap mb-3">
+        <div>
+            <h4 class="mb-1"><%= headingText %></h4>
+            <p class="text-muted small mb-0"><%= subtitleText %></p>
+        </div>
+    </div>
+    <div class="row g-3">
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label" for="q">Search</label>
+            <input id="q" class="form-control" placeholder="<%= hintText %>">
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label" for="categoryId">Category</label>
+            <select id="categoryId" class="form-select">
+                <option value="">All categories</option>
+                <option value="c_10">Keyboards</option>
+                <option value="c_11">Mice</option>
+                <option value="c_12">Monitors</option>
+                <option value="c_13">Audio</option>
+                <option value="c_14">Accessories</option>
+            </select>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label" for="sort">Sort by</label>
+            <select id="sort" class="form-select">
+                <option value="">Default</option>
+                <option value="price_asc">Price: low to high</option>
+                <option value="price_desc">Price: high to low</option>
+                <option value="popularity">Popularity</option>
+                <option value="newest">Newest</option>
+            </select>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <label class="form-label" for="tagFilter">Tags</label>
+            <input id="tagFilter" class="form-control" placeholder="gaming, wireless">
+            <small class="text-muted">Comma separated</small>
+        </div>
+    </div>
+    <div class="row g-3 mt-1">
+        <div class="col-lg-2 col-md-4">
+            <label class="form-label" for="priceMin">Price from</label>
+            <input id="priceMin" type="number" min="0" class="form-control" placeholder="0">
+        </div>
+        <div class="col-lg-2 col-md-4">
+            <label class="form-label" for="priceMax">Price to</label>
+            <input id="priceMax" type="number" min="0" class="form-control" placeholder="1000">
+        </div>
+        <div class="col-lg-3 col-md-4">
+            <label class="form-label" for="ratingFilter">Min rating</label>
+            <select id="ratingFilter" class="form-select">
+                <option value="">Any</option>
+                <option value="3">from 3★</option>
+                <option value="4">from 4★</option>
+                <option value="4.5">from 4.5★</option>
+            </select>
+        </div>
+        <div class="col-lg-2 col-md-4 d-flex align-items-end">
+            <button class="btn btn-primary w-100" id="searchBtn" type="submit"><%= buttonLabel %></button>
+        </div>
+    </div>
+</form>

@@ -1,29 +1,29 @@
 <div class="row g-3">
     <div class="col-12">
         <div class="card card-body shadow-sm">
-            <h3 class="mb-2">История активности</h3>
+            <h3 class="mb-2">Activity history</h3>
             <p class="text-muted mb-0">
-                Пользователь: <strong><%= email || 'не указан' %></strong>
-                (<code><%= userId %></code>). Источник данных — <code>GET /api/users/{id}/history</code>.
+                User: <strong><%= email || 'unknown email' %></strong>
+                (<code><%= userId %></code>). Data source — <code>GET /api/users/{id}/history</code>.
             </p>
         </div>
     </div>
 
     <div class="col-lg-6">
         <div class="card card-body shadow-sm h-100">
-            <h5 class="mb-3">Действия</h5>
+            <h5 class="mb-3">Interactions</h5>
             <table class="table table-sm table-hover align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Время</th>
-                        <th>Товар</th>
-                        <th>Событие</th>
+                        <th>Time</th>
+                        <th>Product</th>
+                        <th>Event</th>
                         <th>Value</th>
                     </tr>
                 </thead>
                 <tbody id="history_interactions">
                     <tr>
-                        <td colspan="4" class="text-muted">Загрузка...</td>
+                        <td colspan="4" class="text-muted">Loading...</td>
                     </tr>
                 </tbody>
             </table>
@@ -32,19 +32,19 @@
 
     <div class="col-lg-6">
         <div class="card card-body shadow-sm h-100">
-            <h5 class="mb-3">Заказы</h5>
+            <h5 class="mb-3">Orders</h5>
             <table class="table table-sm table-striped align-middle mb-0">
                 <thead class="table-light">
                     <tr>
-                        <th>Время</th>
+                        <th>Time</th>
                         <th>Order ID</th>
-                        <th>Сумма</th>
-                        <th>Статус</th>
+                        <th>Items</th>
+                        <th>Total</th>
                     </tr>
                 </thead>
                 <tbody id="history_orders">
                     <tr>
-                        <td colspan="4" class="text-muted">Загрузка...</td>
+                        <td colspan="4" class="text-muted">Loading...</td>
                     </tr>
                 </tbody>
             </table>

@@ -77,16 +77,16 @@
 
 
 const { Router } = require('express');
-const { createProduct, listProducts, getProduct, updateProduct, deleteProduct } = require('../controllers/api');
+const { createProduct, listProducts, getProduct, getBoughtTogether, updateProduct, deleteProduct } = require('../controllers/api');
+const { requireRole } = require('../middleware/auth');
 const router = Router();
 
-// админ CRUD
-router.post('/', createProduct);
-router.put('/:id', updateProduct);
-router.delete('/:id', deleteProduct);
+router.post('/', requireRole('admin'), createProduct);
+router.put('/:id', requireRole('admin'), updateProduct);
+router.delete('/:id', requireRole('admin'), deleteProduct);
 
-// публичные
 router.get('/', listProducts);
 router.get('/:id', getProduct);
+router.get('/:id/bought-together', getBoughtTogether);
 
 module.exports = router;

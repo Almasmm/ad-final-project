@@ -1,0 +1,80 @@
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card card-body shadow-sm">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                <div>
+                    <h3 class="mb-1">My profile</h3>
+                    <p class="text-muted mb-0">User ID: <code><%= userId %></code></p>
+                </div>
+                <div class="text-end small text-muted" id="profileMeta"></div>
+            </div>
+            <div class="alert d-none" id="profileAlert"></div>
+            <dl class="row mb-0" id="profileSummary">
+                <dt class="col-sm-3">Email</dt>
+                <dd class="col-sm-9 text-muted">Loading…</dd>
+                <dt class="col-sm-3">Name</dt>
+                <dd class="col-sm-9 text-muted">Loading…</dd>
+                <dt class="col-sm-3">Role</dt>
+                <dd class="col-sm-9 text-muted">Loading…</dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card card-body shadow-sm h-100">
+            <h5 class="mb-3">Update profile</h5>
+            <form id="profileForm" class="row g-3">
+                <div class="col-12">
+                    <label class="form-label">Name</label>
+                    <input id="profile_name" class="form-control" placeholder="Your full name">
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Interests (comma separated)</label>
+                    <textarea id="profile_interests" class="form-control" rows="2" placeholder="gaming, smart home"></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Segments (comma separated)</label>
+                    <textarea id="profile_segments" class="form-control" rows="2" placeholder="tech, accessories"></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Wishlist (product IDs)</label>
+                    <textarea id="profile_wishlist" class="form-control" rows="2" placeholder="p_123, p_456"></textarea>
+                </div>
+                <div class="col-12 d-grid">
+                    <button class="btn btn-primary" type="submit">Save changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card card-body shadow-sm h-100">
+            <h5 class="mb-3">Stored data</h5>
+            <div class="mb-3">
+                <h6 class="text-muted">Wishlist</h6>
+                <ul class="list-group small" id="profileWishlist"></ul>
+            </div>
+            <div>
+                <h6 class="text-muted">Cached recommendations</h6>
+                <ul class="list-group small" id="profileCached"></ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card card-body shadow-sm h-100">
+            <h5 class="mb-3">Recent views</h5>
+            <ul class="list-group small" id="profileViews"></ul>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card card-body shadow-sm h-100">
+            <h5 class="mb-3">Recent purchases</h5>
+            <ul class="list-group small" id="profilePurchases"></ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.__PROFILE_PAGE__ = true;
+</script>

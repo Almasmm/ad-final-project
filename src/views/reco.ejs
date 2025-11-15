@@ -1,16 +1,41 @@
-<div class="row g-3">
+<div class="row g-4">
     <div class="col-12">
         <div class="card card-body shadow-sm mb-2">
-            <h3 class="mb-2">Персональные рекомендации</h3>
+            <h3 class="mb-2">Recommendations</h3>
             <p class="text-muted mb-0">
-                Пользователь: <strong><%= email || 'не указан' %></strong>
-                (<code><%= userId %></code>). Данные берём из последних действий: просмотров, лайков, покупок.
+                Logged in as <strong><%= email || 'Anonymous' %></strong>
+                (<code><%= userId %></code>). Suggestions are built from your browsing, likes, orders and similar users.
             </p>
         </div>
     </div>
+
     <div class="col-12">
-        <div id="reco_list" class="row g-3">
-            <div class="col-12 text-muted" id="reco_status">Загрузка...</div>
+        <div class="card card-body shadow-sm mb-3">
+            <div class="d-flex justify-content-between flex-wrap mb-3">
+                <h5 class="mb-0">Personal recommendations</h5>
+            </div>
+            <div id="reco_personal" class="row g-3"></div>
+            <p id="reco_personal_empty" class="text-muted mb-0">Loading...</p>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card card-body shadow-sm mb-3">
+            <div class="d-flex justify-content-between flex-wrap mb-3">
+                <h5 class="mb-0">Based on recent views</h5>
+            </div>
+            <div id="reco_recent" class="row g-3"></div>
+            <p id="reco_recent_empty" class="text-muted mb-0">Loading...</p>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card card-body shadow-sm">
+            <div class="d-flex justify-content-between flex-wrap mb-3">
+                <h5 class="mb-0">Popular among similar users</h5>
+            </div>
+            <div id="reco_similar_users" class="row g-3"></div>
+            <p id="reco_similar_users_empty" class="text-muted mb-0">Loading...</p>
         </div>
     </div>
 </div>

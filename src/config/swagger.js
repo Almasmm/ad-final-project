@@ -111,7 +111,7 @@ const options = {
                 }
             }
         },
-        // Можно включить глобально:
+        // Enable globally if needed:
         // security: [{ bearerAuth: [] }],
     },
     apis: ['src/routes/*.js'],

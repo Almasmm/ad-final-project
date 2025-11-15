@@ -1,50 +1,74 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><%= typeof title !=='undefined' ? title : 'Tenyz Market' %></title>
+    <title><%= typeof title !== 'undefined' ? title : 'Tenyz Market' %></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="/css/app.css" rel="stylesheet">
 </head>
 
-<body data-page="<%= typeof page !== 'undefined' ? page : '' %>">
-    <% const currentPage = typeof page !== 'undefined' ? page : ''; %>
-    <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm mb-4">
+<% const currentPage = typeof page !== 'undefined' ? page : ''; %>
+<body data-page="<%= currentPage %>" data-role="<%= role || '' %>" data-email-verified="<%= emailVerified ? '1' : '0' %>">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm mb-4">
         <div class="container">
-            <a class="navbar-brand fw-bold text-primary" href="/">Tenyz Market</a>
+            <a class="navbar-brand fw-semibold" href="/">Tenyz Market</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
                 aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse justify-content-end" id="mainNav">
                 <% if (userId) { %>
-                    <div class="d-flex align-items-center gap-3 flex-wrap justify-content-end w-100">
-                        <span class="text-muted small">Вошли как <%= email || 'неизвестно' %></span>
-                        <div class="nav-button-group d-flex flex-wrap gap-2">
-                            <a class="btn btn-outline-primary btn-sm <%= currentPage === 'home' ? 'active-link' : '' %>"
-                                href="/">Каталог</a>
-                            <a class="btn btn-outline-primary btn-sm <%= currentPage === 'reco' ? 'active-link' : '' %>"
-                                href="/me/reco">Рекомендации</a>
-                            <a class="btn btn-outline-primary btn-sm <%= currentPage === 'history' ? 'active-link' : '' %>"
-                                href="/me/history">История</a>
-                            <a class="btn btn-outline-primary btn-sm <%= currentPage === 'admin' ? 'active-link' : '' %>"
-                                href="/admin">Админ</a>
-                            <button class="btn btn-danger btn-sm" id="logoutBtn">Выход</button>
-                        </div>
-                    </div>
+                    <ul class="navbar-nav align-items-lg-center gap-2 w-100 justify-content-lg-end">
+                        <li class="nav-item text-white-50 small me-lg-3">
+                            Signed in as <strong><%= email || 'no email' %></strong>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-light btn-sm <%= ['home','search'].includes(currentPage) ? 'active' : '' %>"
+                                href="/">Catalog</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-light btn-sm <%= currentPage === 'wishlist' ? 'active' : '' %>"
+                                href="/me/wishlist">Wishlist</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-light btn-sm <%= currentPage === 'profile' ? 'active' : '' %>"
+                                href="/me/profile">Profile</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-light btn-sm <%= currentPage === 'reco' ? 'active' : '' %>"
+                                href="/me/reco">Recommendations</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-light btn-sm <%= currentPage === 'history' ? 'active' : '' %>"
+                                href="/me/history">History</a>
+                        </li>
+                        <% if (role === 'admin') { %>
+                            <li class="nav-item">
+                                <a class="btn btn-outline-warning btn-sm <%= currentPage === 'admin' ? 'active' : '' %>"
+                                    href="/admin">Admin</a>
+                            </li>
+                        <% } %>
+                        <li class="nav-item">
+                            <button class="btn btn-danger btn-sm ms-lg-2" id="logoutBtn">Logout</button>
+                        </li>
+                    </ul>
                 <% } else { %>
-                    <div class="d-flex align-items-center gap-3 flex-wrap w-100 justify-content-end">
-                        <div class="nav-button-group d-flex flex-wrap gap-2">
-                            <a class="btn btn-outline-primary btn-sm <%= currentPage === 'home' ? 'active-link' : '' %>"
-                                href="/">Каталог</a>
-                            <a class="btn btn-primary btn-sm <%= currentPage === 'login' ? 'active-link' : '' %>"
-                                href="/login">Войти</a>
-                            <a class="btn btn-secondary btn-sm <%= currentPage === 'register' ? 'active-link' : '' %>"
-                                href="/register">Регистрация</a>
-                        </div>
-                    </div>
+                    <ul class="navbar-nav align-items-lg-center gap-2 w-100 justify-content-lg-end">
+                        <li class="nav-item">
+                            <a class="btn btn-outline-light btn-sm <%= ['home','search'].includes(currentPage) ? 'active' : '' %>"
+                                href="/">Catalog</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-light btn-sm <%= currentPage === 'login' ? 'active' : '' %>"
+                                href="/login">Sign in</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-primary btn-sm <%= currentPage === 'register' ? 'active' : '' %>"
+                                href="/register">Sign up</a>
+                        </li>
+                    </ul>
                 <% } %>
             </div>
         </div>
@@ -60,3 +84,4 @@
 </body>
 
 </html>
+

@@ -1,21 +1,23 @@
 <div class="row justify-content-center">
     <div class="col-md-5 col-lg-4">
         <div class="card card-body shadow-sm auth-card">
-            <h3 class="mb-3">Вход</h3>
-            <div class="alert" id="loginInfo" style="display:none;"></div>
-
+            <h3 class="mb-3 text-center">Sign in to your account</h3>
+            <div class="alert d-none" id="loginInfo"></div>
             <div class="mb-3">
                 <label class="form-label">Email</label>
-                <input id="email" class="form-control" placeholder="you@example.com">
+                <input id="email" class="form-control" placeholder="you@example.com" autocomplete="email">
             </div>
             <div class="mb-3">
-                <label class="form-label">Пароль</label>
-                <input id="password" type="password" class="form-control" placeholder="Введите пароль">
+                <label class="form-label">Password</label>
+                <input id="password" type="password" class="form-control" placeholder="At least 8 characters" autocomplete="current-password">
             </div>
-            <button class="btn btn-primary w-100 mb-2" id="loginBtn">Войти</button>
-            <a class="btn btn-link w-100" href="/forgot">Забыли пароль?</a>
-            <div class="text-center mt-2">
-                <small class="text-muted">Нет аккаунта? <a href="/register">Зарегистрируйтесь</a></small>
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary" id="loginBtn">Sign in</button>
+                <a class="btn btn-link" href="/forgot">Forgot password</a>
+                <a class="btn btn-link" href="/verify">Verify email</a>
+                <div class="text-center small text-muted">
+                    New here? <a href="/register">Create an account</a>
+                </div>
             </div>
         </div>
     </div>

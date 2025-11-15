@@ -13,7 +13,6 @@ async function run() {
     const uri = process.env.MONGO_URI;
     await connectDB(uri);
 
-    // Чистим (только для разработки)
     await Promise.all([
         User.deleteMany({}),
         Product.deleteMany({}),
@@ -77,7 +76,6 @@ async function run() {
         createdAt: new Date(now - 1000 * 30 * 60)
     });
 
-    // Item similarities (заглушка для демо)
     await ItemSimilarity.insertMany([
         { productId: 'p_200', neighbors: [{ productId: 'p_202', sim: 0.81 }, { productId: 'p_201', sim: 0.72 }], updatedAt: new Date() },
         { productId: 'p_201', neighbors: [{ productId: 'p_200', sim: 0.72 }, { productId: 'p_203', sim: 0.60 }], updatedAt: new Date() }

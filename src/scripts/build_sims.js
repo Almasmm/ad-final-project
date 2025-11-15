@@ -5,15 +5,12 @@ const Interaction = require('../models/Interaction');
 const ItemSimilarity = require('../models/ItemSimilarity');
 
 /**
- * Вес событий (можно менять):
  * view=1, like=3, add_to_cart=4, purchase=6
  */
 const WEIGHT = { view: 1, like: 3, add_to_cart: 4, purchase: 6 };
 
-// сколько соседей хранить на товар
 const TOP_K = 20;
 
-// по каким данным считаем: последние N месяцев
 const MONTHS_BACK = 12;
 
 async function build() {
@@ -22,7 +19,6 @@ async function build() {
     const since = new Date();
     since.setMonth(since.getMonth() - MONTHS_BACK);
 
-    // 1) Собираем пользователь→товар→вес (agg по последним MONTHS_BACK)
     const pipeline = [
         { $match: { ts: { $gte: since } } },
         {
@@ -42,14 +38,12 @@ async function build() {
                 },
             },
         },
-        // суммируем по (userId, productId)
         {
             $group: {
                 _id: { userId: '$userId', productId: '$productId' },
                 w: { $sum: '$w' },
             },
         },
-        // вернём «плоско»
         {
             $project: {
                 _id: 0,
@@ -62,7 +56,6 @@ async function build() {
 
     const rows = await Interaction.aggregate(pipeline).allowDiskUse(true);
 
-    // 2) Строим словарь: product -> { user -> weight }
     const byItem = new Map();      // pid -> Map(uid -> w)
     const byUser = new Map();      // uid -> Array<{pid,w}>
     for (const r of rows) {
@@ -73,9 +66,6 @@ async function build() {
         byUser.get(r.userId).push({ pid: r.productId, w: r.w });
     }
 
-    // 3) Косинусная похожесть item-item по ко-пользователям
-    // косинус: sum(w_iu * w_ju) / (sqrt(sum(w_iu^2)) * sqrt(sum(w_ju^2)))
-    // Сначала посчитаем нормы ||i||
     const norm = new Map(); // pid -> sqrt(sum w^2)
     for (const [pid, umap] of byItem.entries()) {
         let s = 0;
@@ -83,11 +73,8 @@ async function build() {
         norm.set(pid, Math.sqrt(s) || 1e-9);
     }
 
-    // Посчитаем попарные скоры через пробег по пользователям
-    // (для каждого пользователя перебираем пары товаров из его истории)
     const co = new Map();  // "i|j" -> dot
     for (const [uid, items] of byUser.entries()) {
-        // если у пользователя 1 предмет — ко-скора нет
         for (let a = 0; a < items.length; a++) {
             for (let b = a + 1; b < items.length; b++) {
                 const i = items[a], j = items[b];
@@ -99,8 +86,6 @@ async function build() {
         }
     }
 
-    // 4) Превратим скалярные произведения в косинусную похожесть
-    // и соберём топ-K для каждого товара
     const neigh = new Map(); // pid -> Array<{productId, sim}>
     for (const [key, dot] of co.entries()) {
         const [i, j] = key.split('|');
@@ -113,7 +98,6 @@ async function build() {
         neigh.set(pid, arr.slice(0, TOP_K));
     }
 
-    // 5) Сохраняем в коллекцию item_similarities (upsert)
     const bulk = [];
     for (const [pid, neighbors] of neigh.entries()) {
         bulk.push({

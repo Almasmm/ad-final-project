@@ -55,12 +55,32 @@
  */
 
 const { Router } = require('express');
-const { createUser, getUser, getUserHistory } = require('../controllers/api');
-const { authRequired } = require('../middleware/auth');
+const {
+    createUser,
+    getUser,
+    getUserHistory,
+    getMyProfile,
+    updateMyProfile,
+    listUsers,
+    adminUpdateUser,
+    adminDeleteUser,
+    getMyWishlist,
+    removeFromWishlist,
+} = require('../controllers/api');
+const { authRequired, requireRole } = require('../middleware/auth');
 
 const router = Router();
 
 router.post('/', createUser);          // registration
+router.get('/me', authRequired, getMyProfile);
+router.patch('/me', authRequired, updateMyProfile);
+router.get('/me/wishlist', authRequired, getMyWishlist);
+router.delete('/me/wishlist/:productId', authRequired, removeFromWishlist);
+
+router.get('/', requireRole('admin'), listUsers);
+router.patch('/:id', requireRole('admin'), adminUpdateUser);
+router.delete('/:id', requireRole('admin'), adminDeleteUser);
+
 router.get('/:id', getUser);           // profile lookup
 router.get('/:id/history', authRequired, getUserHistory); // owner-only history
 

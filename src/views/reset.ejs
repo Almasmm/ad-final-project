@@ -1,27 +1,24 @@
 <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
         <div class="card card-body shadow-sm auth-card">
-            <h3 class="mb-3">Сброс пароля</h3>
-
+            <h3 class="mb-3 text-center">Change password</h3>
+            <div class="alert d-none" id="resetInfo"></div>
             <div class="mb-3">
                 <label class="form-label">Email</label>
                 <input id="reset_email" class="form-control" placeholder="you@example.com">
             </div>
-
             <div class="mb-3">
-                <label class="form-label">Код из письма</label>
-                <input id="reset_code" class="form-control" placeholder="например, 123456">
+                <label class="form-label">Verification code</label>
+                <input id="reset_code" class="form-control" placeholder="Example: 123456">
             </div>
-
             <div class="mb-3">
-                <label class="form-label">Новый пароль</label>
-                <input id="reset_new_password" type="password" class="form-control" placeholder="минимум 8 символов">
+                <label class="form-label">New password</label>
+                <input id="reset_new_password" type="password" class="form-control" placeholder="At least 8 characters">
             </div>
-
-            <button class="btn btn-primary w-100 mb-2" id="resetBtn">Сменить пароль</button>
-            <a class="btn btn-link w-100" href="/login">Вернуться к входу</a>
-
-            <div class="alert" id="resetInfo" style="display:none;"></div>
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary" id="resetBtn">Update password</button>
+                <a class="btn btn-link" href="/login">Back to login</a>
+            </div>
         </div>
     </div>
 </div>

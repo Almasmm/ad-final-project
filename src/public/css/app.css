@@ -15,6 +15,17 @@ body {
     min-width: 90px;
 }
 
+.navbar .btn.active,
+.navbar .btn.active:focus {
+    color: #0d6efd;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-color: transparent;
+}
+
+.navbar .btn {
+    transition: all 0.2s ease;
+}
+
 .card {
     border: none;
     border-radius: 0.75rem;
@@ -29,6 +40,10 @@ body {
 #reco_list .card,
 #similar .card {
     border-radius: 0.85rem;
+}
+
+.auth-card {
+    border-radius: 1rem;
 }
 
 .product-price {
@@ -60,4 +75,13 @@ body {
 
 .table td {
     vertical-align: middle;
+}
+
+#profileSummary dt {
+    font-weight: 600;
+    color: #6c757d;
+}
+
+#profileMeta {
+    font-size: 0.85rem;
 }

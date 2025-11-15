@@ -38,12 +38,12 @@ function buildTransporter() {
 
 async function sendResetEmail({ to, code, expiresAt }) {
     const tx = buildTransporter();
-    const subject = 'Код для восстановления пароля';
+    const subject = 'Password reset code';
     const text = [
-        'Вы запросили восстановление пароля в Tenyz Market.',
-        `Код: ${code}`,
-        `Он действителен до ${expiresAt.toLocaleString()}.`,
-        'Если вы не запрашивали сброс, просто игнорируйте это письмо.',
+        'You requested a password reset in Tenyz Market.',
+        `Code: ${code}`,
+        `It is valid until ${expiresAt.toLocaleString()}.`,
+        'If you did not request this, please ignore this email.',
     ].join('\n');
 
     if (!tx) {
@@ -61,4 +61,28 @@ async function sendResetEmail({ to, code, expiresAt }) {
     return true;
 }
 
-module.exports = { sendResetEmail };
+async function sendVerificationEmail({ to, code, expiresAt }) {
+    const tx = buildTransporter();
+    const subject = 'Email verification for Tenyz Market';
+    const text = [
+        'Please verify your email to use Tenyz Market.',
+        `Verification code: ${code}`,
+        `It is valid until ${expiresAt.toLocaleString()}.`,
+    ].join('\n');
+
+    if (!tx) {
+        console.info(`[mailer] verification code for ${to}: ${code} (expires ${expiresAt.toISOString()})`);
+        return false;
+    }
+
+    await tx.sendMail({
+        from: process.env.MAIL_FROM,
+        to,
+        subject,
+        text,
+    });
+
+    return true;
+}
+
+module.exports = { sendResetEmail, sendVerificationEmail };

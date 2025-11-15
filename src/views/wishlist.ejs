@@ -1,0 +1,37 @@
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card card-body shadow-sm">
+            <div class="d-flex flex-wrap justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1">Wishlist</h3>
+                    <p class="text-muted mb-0">Products you liked appear here. Remove items or add them to the cart.</p>
+                </div>
+                <span class="text-muted small" id="wishlistCount"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card card-body shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Saved products</h5>
+                <button class="btn btn-sm btn-outline-secondary" id="wishlistReloadBtn">Refresh</button>
+            </div>
+            <div id="wishlistItems" class="row g-3"></div>
+            <p id="wishlistEmpty" class="text-muted mb-0">Loading wishlist...</p>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card card-body shadow-sm">
+            <h5 class="mb-3">Recommended based on your wishlist</h5>
+            <div id="wishlistReco" class="row g-3"></div>
+            <p id="wishlistRecoEmpty" class="text-muted mb-0">Loading suggestions...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.__USER_ID__ = "<%= userId %>";
+    window.__WISHLIST_PAGE__ = true;
+</script>

@@ -1,14 +1,22 @@
 <section class="mb-4">
-    <h4 class="mb-3">Товар <code><%= id %></code></h4>
+    <h4 class="mb-3">Product <code><%= id %></code></h4>
     <div id="productCard"></div>
+</section>
+
+<section class="card card-body shadow-sm mb-4">
+    <div class="d-flex justify-content-between flex-wrap mb-3">
+        <h5 class="mb-0">Related products</h5>
+    </div>
+    <div id="similar" class="row g-3"></div>
+    <p id="similarEmpty" class="text-muted mb-0"></p>
 </section>
 
 <section class="card card-body shadow-sm">
     <div class="d-flex justify-content-between flex-wrap mb-3">
-        <h5 class="mb-0">Похожие товары</h5>
+        <h5 class="mb-0">Bought together</h5>
     </div>
-    <div id="similar" class="row g-3"></div>
-    <p id="similarEmpty" class="text-muted mb-0"></p>
+    <div id="boughtTogether" class="row g-3"></div>
+    <p id="boughtTogetherEmpty" class="text-muted mb-0"></p>
 </section>
 
 <script>

@@ -1,0 +1,20 @@
+<%- include('partials/catalog-filters', {
+    heading: 'Catalog search',
+    subtitle: 'Enter a query and combine price, category, tag or rating filters.',
+    hint: 'Example: monitor, bluetooth',
+    submitLabel: 'Search',
+    showSearchLink: false
+}) %>
+
+<section class="mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <div>
+            <h5 class="mb-0">Search results</h5>
+            <p class="text-muted small mb-0">Queries are saved to improve future recommendations.</p>
+        </div>
+        <span class="text-muted small" id="productsCount"></span>
+    </div>
+    <p class="text-muted small" id="searchSummary"></p>
+    <div id="products" class="row g-3"></div>
+    <p id="productsEmpty" class="text-muted text-center py-4 d-none">Nothing found for the given filters. Try simplifying them.</p>
+</section>

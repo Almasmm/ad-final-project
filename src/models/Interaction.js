@@ -2,7 +2,6 @@ const { Schema, model } = require('mongoose');
 
 const interactionSchema = new Schema(
     {
-        _id: { type: String }, // можно не задавать (ObjectId ок)
         userId: { type: String, required: true },
         productId: { type: String, required: true },
         type: { type: String, enum: ['view', 'like', 'add_to_cart', 'purchase'], required: true },

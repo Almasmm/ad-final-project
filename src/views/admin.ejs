@@ -1,19 +1,26 @@
+<% if (!isAdmin) { %>
+    <div class="alert alert-warning">
+        Access to the admin panel is limited to users with the <strong>admin</strong> role. Contact the maintainer if you need elevated permissions.
+    </div>
+<% } %>
+
+<% if (isAdmin) { %>
 <div class="row">
     <div class="col-md-6 mb-4">
-        <h3>Админ-панель</h3>
+        <h3>Admin panel</h3>
         <p class="text-muted">
-            Быстрые действия для проверки состояния рекомендаций и данных.
+            Quick actions to monitor data health and recommendation quality.
         </p>
     </div>
 
     <div class="col-md-6 mb-4">
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Пересчитать item-item похожесть</h5>
+                <h5 class="card-title">Rebuild item-item similarities</h5>
                 <p class="card-text small text-muted">
-                    Вызывает <code>POST /admin/rebuild-sims</code>. В рабочей среде это выполняет отдельный worker.
+                    Calls <code>POST /admin/rebuild-sims</code>. In production this should run via a background worker.
                 </p>
-                <button class="btn btn-outline-primary" id="rebuildSimsBtn">Пересчитать</button>
+                <button class="btn btn-outline-primary" id="rebuildSimsBtn">Rebuild</button>
                 <div class="mt-2 small" id="rebuildStatus"></div>
             </div>
         </div>
@@ -22,30 +29,30 @@
     <div class="col-12 mb-4">
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Создать товар</h5>
+                <h5 class="card-title">Create product</h5>
                 <form class="row g-3" id="adminProductForm">
                     <div class="col-md-4">
-                        <label class="form-label">Название</label>
+                        <label class="form-label">Name</label>
                         <input class="form-control" id="adminProdName" placeholder="Logitech MX Master">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Категория ID</label>
+                        <label class="form-label">Category ID</label>
                         <input class="form-control" id="adminProdCategoryId" placeholder="c_10">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Категория</label>
+                        <label class="form-label">Category name</label>
                         <input class="form-control" id="adminProdCategoryName" placeholder="Keyboards">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Цена</label>
+                        <label class="form-label">Price</label>
                         <input type="number" class="form-control" id="adminProdPrice" placeholder="99">
                     </div>
                     <div class="col-md-2">
-                        <label class="form-label">Бренд</label>
+                        <label class="form-label">Brand</label>
                         <input class="form-control" id="adminProdBrand" placeholder="Logitech">
                     </div>
                     <div class="col-12 d-flex gap-2 align-items-end">
-                        <button type="submit" class="btn btn-primary">Создать</button>
+                        <button type="submit" class="btn btn-primary">Create</button>
                         <div class="small" id="adminProdStatus"></div>
                     </div>
                 </form>
@@ -58,11 +65,11 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center flex-wrap mb-2">
                     <div>
-                        <h5 class="card-title mb-1">Товары</h5>
-                        <div class="text-muted small">Всего: <span id="adminProductCount">0</span></div>
+                        <h5 class="card-title mb-1">Products</h5>
+                        <div class="text-muted small">Total: <span id="adminProductCount">0</span></div>
                     </div>
                     <button class="btn btn-sm btn-outline-secondary mt-2 mt-md-0" id="adminLoadProductsBtn">
-                        Обновить список
+                        Refresh list
                     </button>
                 </div>
                 <div class="table-responsive">
@@ -70,15 +77,16 @@
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Название</th>
-                                <th>Категория</th>
-                                <th>Цена</th>
-                                <th>Рейтинг</th>
+                                <th>Name</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th>Rating</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody id="adminProductsBody">
                             <tr>
-                                <td colspan="5" class="text-muted">Нет товаров</td>
+                                <td colspan="6" class="text-muted">No products to display</td>
                             </tr>
                         </tbody>
                     </table>
@@ -86,4 +94,40 @@
             </div>
         </div>
     </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center flex-wrap mb-2">
+                    <div>
+                        <h5 class="card-title mb-1">Users</h5>
+                        <div class="text-muted small">Manage roles and access.</div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-secondary mt-2 mt-md-0" id="adminLoadUsersBtn">
+                        Refresh users
+                    </button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Email</th>
+                                <th>Name</th>
+                                <th>Role</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminUsersBody">
+                            <tr>
+                                <td colspan="5" class="text-muted">No users loaded</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="small mt-2" id="adminUserStatus"></div>
+            </div>
+        </div>
+    </div>
 </div>
+<% } %>

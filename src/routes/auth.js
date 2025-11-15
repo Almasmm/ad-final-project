@@ -1,5 +1,14 @@
 const { Router } = require('express');
-const { register, login, forgot, reset } = require('../controllers/auth');
+const {
+    register,
+    verifyEmail,
+    resendVerification,
+    login,
+    refresh,
+    logout,
+    forgot,
+    reset,
+} = require('../controllers/auth');
 const router = Router();
 
 /**
@@ -67,7 +76,11 @@ const router = Router();
 
 
 router.post('/register', register);
+router.post('/verify', verifyEmail);
+router.post('/verify/resend', resendVerification);
 router.post('/login', login);
+router.post('/refresh', refresh);
+router.post('/logout', logout);
 router.post('/forgot', forgot);
 router.post('/reset', reset);
 
