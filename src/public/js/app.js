@@ -452,14 +452,26 @@
     }
 
     function initForgotForm() {
-        const btn = document.getElementById('forgotBtn');
-        if (!btn) return;
+        const sendBtn = document.getElementById('forgotBtn');
+        if (!sendBtn) return;
+        const resendBtn = document.getElementById('forgotResendBtn');
+        const continueBtn = document.getElementById('forgotContinueBtn');
         const emailInput = document.getElementById('forgot_email');
+        const codeInput = document.getElementById('forgot_code');
+        const codeSection = document.getElementById('forgotCodeSection');
         const info = document.getElementById('forgotInfo');
         attachValidation(emailInput);
+        attachValidation(codeInput);
 
-        btn.addEventListener('click', async (event) => {
-            event.preventDefault();
+        const revealCodeStep = () => {
+            codeSection?.classList.remove('d-none');
+            resendBtn?.classList.remove('d-none');
+            if (codeInput) {
+                codeInput.focus();
+            }
+        };
+
+        const sendResetRequest = async (button, actionLabel = 'Sending...') => {
             const email = (emailInput?.value || '').trim().toLowerCase();
             if (!email) {
                 markInvalid(emailInput, 'Enter email');
@@ -467,22 +479,55 @@
                 return;
             }
             setInlineAlert(info, '');
-            toggleButtonLoading(btn, true, 'Sending...');
+            toggleButtonLoading(button, true, actionLabel);
+            if (button !== sendBtn) {
+                sendBtn.disabled = true;
+            }
             try {
                 const resp = await request('/auth/forgot', {
                     method: 'POST',
                     body: { email },
                 });
-                let message = 'If this email exists, we have sent the reset code.';
+                let message = 'We sent a verification code to the provided email.';
                 if (resp && resp.demoCode) {
                     message += ` DEV/DEBUG: ${resp.demoCode}`;
                 }
                 setInlineAlert(info, message, 'success');
+                revealCodeStep();
             } catch (err) {
                 setInlineAlert(info, err.message, 'danger');
             } finally {
-                toggleButtonLoading(btn, false);
+                toggleButtonLoading(button, false);
+                sendBtn.disabled = false;
             }
+        };
+
+        sendBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            sendResetRequest(sendBtn, 'Sending...');
+        });
+
+        resendBtn?.addEventListener('click', (event) => {
+            event.preventDefault();
+            sendResetRequest(resendBtn, 'Resending...');
+        });
+
+        continueBtn?.addEventListener('click', (event) => {
+            event.preventDefault();
+            const email = (emailInput?.value || '').trim().toLowerCase();
+            const code = (codeInput?.value || '').trim();
+            if (!email) {
+                markInvalid(emailInput, 'Enter email');
+                setInlineAlert(info, 'Email is required to continue', 'warning');
+                return;
+            }
+            if (!code) {
+                markInvalid(codeInput, 'Enter verification code');
+                setInlineAlert(info, 'Enter the verification code we sent', 'warning');
+                return;
+            }
+            const params = new URLSearchParams({ email, code });
+            window.location.href = `/reset?${params.toString()}`;
         });
     }
 
@@ -497,6 +542,9 @@
         const params = new URLSearchParams(window.location.search);
         if (params.get('email') && emailInput) {
             emailInput.value = params.get('email');
+        }
+        if (params.get('code') && codeInput) {
+            codeInput.value = params.get('code');
         }
 
         btn.addEventListener('click', async (event) => {
@@ -765,7 +813,7 @@
         const tagsHtml = tags.map((tag) => `<span class="badge bg-light text-muted me-1">${tag}</span>`).join('');
         const meta = opts.metaText ? `<div class="text-muted small mt-1">${opts.metaText}</div>` : '';
         col.innerHTML = `
-            <div class="card h-100 shadow-sm">
+            <div class="card catalog-card h-100 shadow-sm">
                 <div class="card-body d-flex flex-column">
                     <div class="small text-muted mb-1">${product.brand || ''}</div>
                     <h5 class="card-title mb-1">${product.name || 'No name'}</h5>

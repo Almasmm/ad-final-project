@@ -9,8 +9,19 @@
             </div>
             <div class="d-grid gap-2">
                 <button class="btn btn-primary" id="forgotBtn">Send code</button>
-                <a class="btn btn-link" href="/reset">I already have a code</a>
+                <button class="btn btn-outline-primary d-none" id="forgotResendBtn">Resend code</button>
                 <a class="btn btn-link" href="/login">Back to login</a>
+            </div>
+            <div class="border-top pt-3 mt-3 d-none" id="forgotCodeSection">
+                <p class="text-muted small mb-3">Enter the six-digit code we emailed you to continue.</p>
+                <div class="mb-3">
+                    <label class="form-label">Verification code</label>
+                    <input id="forgot_code" class="form-control" placeholder="Example: 123456">
+                </div>
+                <div class="d-grid gap-2">
+                    <button class="btn btn-success" id="forgotContinueBtn">Continue to change password</button>
+                    <a class="btn btn-link" href="/reset">Open change-password form directly</a>
+                </div>
             </div>
             <div class="alert d-none mt-3" id="forgotInfo"></div>
         </div>
