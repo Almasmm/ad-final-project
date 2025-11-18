@@ -15,7 +15,10 @@
         user: 'tm_user_payload',
     };
 
-    const state = loadAuthState();
+    const state = {
+        ...loadAuthState(),
+        cart: createEmptyCartState(),
+    };
 
     document.addEventListener('DOMContentLoaded', () => {
         initGlobal();
@@ -25,6 +28,7 @@
         initProductPage();
         initWishlistPage();
         initHistoryPage();
+        initCartPage();
         initRecommendationsPage();
         initProfilePage();
         initAdminPage();
@@ -80,6 +84,48 @@
         localStorage.removeItem(storageKeys.refresh);
         localStorage.removeItem(storageKeys.refreshExp);
         localStorage.removeItem(storageKeys.user);
+        state.cart = createEmptyCartState();
+        refreshCartIndicator();
+    }
+
+    function createEmptyCartState() {
+        return {
+            items: [],
+            totalItems: 0,
+            totalQty: 0,
+            totalPrice: 0,
+            updatedAt: null,
+        };
+    }
+
+    function updateCartState(cartPayload) {
+        const normalized = cartPayload
+            ? {
+                  items: Array.isArray(cartPayload.items) ? cartPayload.items : [],
+                  totalItems: Number(cartPayload.totalItems) || (Array.isArray(cartPayload.items) ? cartPayload.items.length : 0),
+                  totalQty: Number(cartPayload.totalQty) || 0,
+                  totalPrice: Number(cartPayload.totalPrice) || 0,
+                  updatedAt: cartPayload.updatedAt || null,
+              }
+            : createEmptyCartState();
+        state.cart = normalized;
+        refreshCartIndicator();
+        return normalized;
+    }
+
+    function refreshCartIndicator() {
+        const indicator = document.getElementById('cartIndicator');
+        if (!indicator) return;
+        const total = Number(state.cart?.totalQty) || 0;
+        indicator.dataset.count = String(total);
+        indicator.textContent = total > 0 ? `Cart (${total})` : 'Cart (empty)';
+        if (total > 0) {
+            indicator.classList.remove('btn-outline-light');
+            indicator.classList.add('btn-warning', 'text-dark');
+        } else {
+            indicator.classList.add('btn-outline-light');
+            indicator.classList.remove('btn-warning', 'text-dark');
+        }
     }
 
     function showGlobalMessage(message, type = 'info', timeout = 5000) {
@@ -269,6 +315,22 @@
         }
     }
 
+    async function fetchCartSummary({ silent = false } = {}) {
+        if (!isAuthenticated()) {
+            updateCartState(null);
+            return null;
+        }
+        try {
+            const resp = await request('/api/cart', {}, { auth: true });
+            return updateCartState(resp?.data || null);
+        } catch (err) {
+            if (!silent) {
+                showGlobalMessage(err.message, 'danger');
+            }
+            throw err;
+        }
+    }
+
     async function syncSession(user) {
         try {
             await rawFetch('/_session/set', {
@@ -330,6 +392,11 @@
                     toggleButtonLoading(logoutBtn, false);
                 }
             });
+        }
+        if (isAuthenticated()) {
+            fetchCartSummary({ silent: true }).catch(() => {});
+        } else {
+            updateCartState(null);
         }
     }
 
@@ -615,7 +682,10 @@
                         method: 'POST',
                         body: { email, code },
                     });
-                    setInlineAlert(info, 'Email verified. You can sign in now.', 'success');
+                    setInlineAlert(info, 'Email verified. Redirecting to login...', 'success');
+                    window.setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 1400);
                 } catch (err) {
                     setInlineAlert(info, err.message, 'danger');
                 } finally {
@@ -639,11 +709,19 @@
                         method: 'POST',
                         body: { email },
                     });
-                    let message = 'Code sent again.';
-                    if (resp && resp.demoCode) {
+                    let message = resp?.message || 'Verification email sent again.';
+                    if (resp?.demoCode) {
                         message += ` DEV/DEBUG: ${resp.demoCode}`;
                     }
-                    setInlineAlert(info, message, 'info');
+                    let alertType = 'info';
+                    if (resp?.emailSent === true) {
+                        alertType = 'success';
+                    } else if (resp?.emailSent === false) {
+                        alertType = 'warning';
+                    } else if (message.toLowerCase().includes('already verified')) {
+                        alertType = 'success';
+                    }
+                    setInlineAlert(info, message, alertType);
                 } catch (err) {
                     setInlineAlert(info, err.message, 'danger');
                 } finally {
@@ -781,22 +859,50 @@
             showGlobalMessage('Sign in to continue', 'warning');
             return;
         }
-        const type = action === 'wishlist' ? 'like' : 'add_to_cart';
-        const value = action === 'wishlist' ? 5 : 1;
-        btn.disabled = true;
+        if (!productId) return;
+        if (btn) btn.disabled = true;
         try {
-            await request('/api/interactions', {
-                method: 'POST',
-                body: { productId, type, value },
-            }, { auth: true });
-            const message = action === 'wishlist'
-                ? 'Item added to wishlist'
-                : 'Item added to cart (demo)';
-            showGlobalMessage(message, 'success');
+            if (action === 'wishlist') {
+                await request('/api/interactions', {
+                    method: 'POST',
+                    body: { productId, type: 'like', value: 5 },
+                }, { auth: true });
+                showGlobalMessage('Item added to wishlist', 'success');
+                return;
+            }
+            if (action === 'cart') {
+                const resp = await request('/api/cart/items', {
+                    method: 'POST',
+                    body: { productId, qty: 1 },
+                }, { auth: true });
+                const cartData = updateCartState(resp?.data || null);
+                const totalQty = Number(cartData.totalQty) || 0;
+                const suffix = totalQty === 1 ? '' : 's';
+                showGlobalMessage(
+                    totalQty > 0
+                        ? `Added to cart. ${totalQty} item${suffix} total.`
+                        : 'Cart is empty.',
+                    'success'
+                );
+                void recordCartInteraction(productId);
+                return;
+            }
+            showGlobalMessage('Unsupported action', 'warning');
         } catch (err) {
             showGlobalMessage(err.message, 'danger');
         } finally {
-            btn.disabled = false;
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    async function recordCartInteraction(productId) {
+        try {
+            await request('/api/interactions', {
+                method: 'POST',
+                body: { productId, type: 'add_to_cart', value: 1 },
+            }, { auth: true });
+        } catch (_err) {
+            // analytics logging is best-effort
         }
     }
 
@@ -1200,6 +1306,226 @@
         renderRows();
     }
 
+    function initCartPage() {
+        if (page !== 'cart') return;
+        const listEl = document.getElementById('cartItems');
+        const emptyEl = document.getElementById('cartEmpty');
+        const summaryItemsEl = document.getElementById('cartSummaryItems');
+        const summaryQtyEl = document.getElementById('cartSummaryQty');
+        const summarySubtotalEl = document.getElementById('cartSummarySubtotal');
+        const summaryTotalEl = document.getElementById('cartSummaryTotal');
+        const summaryUpdatedEl = document.getElementById('cartSummaryUpdated');
+        const checkoutBtn = document.getElementById('cartCheckoutBtn');
+        const refreshBtn = document.getElementById('cartRefreshBtn');
+        if (!listEl) return;
+
+        const buildTags = (tags = []) => {
+            if (!Array.isArray(tags) || !tags.length) return '';
+            return `<div class="mt-1">${tags.slice(0, 3).map((tag) => `<span class="badge bg-light text-muted me-1">${tag}</span>`).join('')}</div>`;
+        };
+
+        const buildCartRow = (item) => {
+            const product = item.product || {};
+            const price = Number(item.price ?? product.price) || 0;
+            const lineTotal = price * (Number(item.qty) || 0);
+            const category = product.categoryName || product.category || '';
+            const tagsHtml = buildTags(product.tags);
+            const col = document.createElement('div');
+            col.className = 'card cart-item shadow-sm';
+            col.dataset.productId = item.productId;
+            col.innerHTML = `
+                <div class="card-body d-flex flex-wrap align-items-center gap-3">
+                    <div class="flex-grow-1 min-w-0">
+                        <div class="text-muted small">${product.brand || ''}</div>
+                        <h6 class="mb-1 text-truncate">${product.name || 'Unavailable product'}</h6>
+                        ${category ? `<span class="badge text-bg-secondary">${category}</span>` : ''}
+                        ${tagsHtml}
+                    </div>
+                    <div class="text-end">
+                        <div class="fw-bold">${formatCurrency(price)}</div>
+                        <div class="text-muted small">Per unit</div>
+                    </div>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <div class="input-group input-group-sm cart-qty-group">
+                            <button class="btn btn-outline-secondary" type="button" data-action="decrease" data-id="${item.productId}">-</button>
+                            <input type="number" class="form-control cart-qty-input" min="1" value="${item.qty}"
+                                data-id="${item.productId}" aria-label="Quantity for ${product.name || item.productId}">
+                            <button class="btn btn-outline-secondary" type="button" data-action="increase" data-id="${item.productId}">+</button>
+                        </div>
+                        <div class="text-muted small">Line total: <strong>${formatCurrency(lineTotal)}</strong></div>
+                    </div>
+                    <div class="ms-auto">
+                        <button class="btn btn-link text-danger p-0" type="button" data-action="remove" data-id="${item.productId}">Remove</button>
+                    </div>
+                </div>
+            `;
+            return col;
+        };
+
+        const renderSummary = (cart) => {
+            const totalItems = Number(cart?.totalItems) || 0;
+            const totalQty = Number(cart?.totalQty) || 0;
+            const totalPrice = Number(cart?.totalPrice) || 0;
+            if (summaryItemsEl) summaryItemsEl.textContent = totalItems;
+            if (summaryQtyEl) summaryQtyEl.textContent = totalQty;
+            if (summarySubtotalEl) summarySubtotalEl.textContent = formatCurrency(totalPrice);
+            if (summaryTotalEl) summaryTotalEl.textContent = formatCurrency(totalPrice);
+            if (summaryUpdatedEl) {
+                summaryUpdatedEl.textContent = cart?.updatedAt
+                    ? `Updated ${formatDateTime(cart.updatedAt)}`
+                    : 'Never updated';
+            }
+            if (checkoutBtn) {
+                checkoutBtn.disabled = totalQty === 0;
+            }
+        };
+
+        const renderCart = (cart) => {
+            const items = Array.isArray(cart?.items) ? cart.items : [];
+            listEl.innerHTML = '';
+            if (!items.length) {
+                if (emptyEl) emptyEl.textContent = 'Your cart is empty.';
+                return;
+            }
+            if (emptyEl) emptyEl.textContent = '';
+            const fragment = document.createDocumentFragment();
+            items.forEach((item) => fragment.appendChild(buildCartRow(item)));
+            listEl.appendChild(fragment);
+        };
+
+        const renderAll = (cart) => {
+            renderCart(cart);
+            renderSummary(cart);
+        };
+
+        const normalizeQty = (value) => {
+            const num = Number(value);
+            if (!Number.isFinite(num)) return 0;
+            return Math.max(0, Math.floor(num));
+        };
+
+        const handleQtyUpdate = async (productId, qty, control) => {
+            const nextQty = normalizeQty(qty);
+            if (control) control.disabled = true;
+            try {
+                if (nextQty <= 0) {
+                    await handleRemove(productId, null);
+                    return;
+                }
+                const resp = await request(`/api/cart/items/${productId}`, {
+                    method: 'PATCH',
+                    body: { qty: nextQty },
+                }, { auth: true });
+                const cartData = updateCartState(resp?.data || null);
+                renderAll(cartData);
+            } catch (err) {
+                showGlobalMessage(err.message, 'danger');
+            } finally {
+                if (control) control.disabled = false;
+            }
+        };
+
+        const handleRemove = async (productId, control) => {
+            if (control && control.tagName === 'BUTTON') {
+                toggleButtonLoading(control, true, 'Removing...');
+            } else if (control) {
+                control.disabled = true;
+            }
+            try {
+                const resp = await request(`/api/cart/items/${productId}`, { method: 'DELETE' }, { auth: true });
+                const cartData = updateCartState(resp?.data || null);
+                renderAll(cartData);
+            } catch (err) {
+                showGlobalMessage(err.message, 'danger');
+            } finally {
+                if (control && control.tagName === 'BUTTON') {
+                    toggleButtonLoading(control, false);
+                } else if (control) {
+                    control.disabled = false;
+                }
+            }
+        };
+
+        const loadCart = async () => {
+            listEl.innerHTML = '<div class="text-center text-muted py-3">Loading cart...</div>';
+            if (emptyEl) emptyEl.textContent = '';
+            try {
+                const cart = await fetchCartSummary({ silent: true });
+                renderAll(cart);
+            } catch (err) {
+                listEl.innerHTML = '';
+                if (emptyEl) emptyEl.textContent = err.message;
+            }
+        };
+
+        listEl.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLElement)) return;
+            const btn = target.closest('button[data-action]');
+            if (!btn) return;
+            const productId = btn.getAttribute('data-id');
+            const action = btn.getAttribute('data-action');
+            if (!productId || !action) return;
+            if (action === 'increase' || action === 'decrease') {
+                const rowInput = listEl.querySelector(`input.cart-qty-input[data-id="${productId}"]`);
+                const current = normalizeQty(rowInput?.value || 1);
+                const delta = action === 'increase' ? 1 : -1;
+                const nextQty = current + delta;
+                handleQtyUpdate(productId, nextQty, btn);
+            } else if (action === 'remove') {
+                handleRemove(productId, btn);
+            }
+        });
+
+        listEl.addEventListener('change', (event) => {
+            const input = event.target;
+            if (!(input instanceof HTMLInputElement)) return;
+            if (!input.classList.contains('cart-qty-input')) return;
+            const productId = input.getAttribute('data-id');
+            if (!productId) return;
+            handleQtyUpdate(productId, input.value, input);
+        });
+
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                loadCart();
+            });
+        }
+
+        if (checkoutBtn) {
+            checkoutBtn.addEventListener('click', async (event) => {
+                event.preventDefault();
+                const items = Array.isArray(state.cart?.items) ? state.cart.items : [];
+                if (!items.length) {
+                    showGlobalMessage('Your cart is empty.', 'info');
+                    return;
+                }
+                toggleButtonLoading(checkoutBtn, true, 'Processing...');
+                try {
+                    const payload = items.map((item) => ({
+                        productId: item.productId,
+                        qty: item.qty,
+                        price: item.price || Number(item.product?.price) || 0,
+                    }));
+                    await request('/api/orders/checkout', {
+                        method: 'POST',
+                        body: { items: payload },
+                    }, { auth: true });
+                    showGlobalMessage('Order placed successfully (demo).', 'success');
+                    const cart = await fetchCartSummary({ silent: true });
+                    renderAll(cart);
+                } catch (err) {
+                    showGlobalMessage(err.message, 'danger');
+                } finally {
+                    toggleButtonLoading(checkoutBtn, false);
+                }
+            });
+        }
+
+        loadCart();
+    }
+
     function initRecommendationsPage() {
         if (page !== 'reco') return;
         const userId = window.__USER_ID__;
@@ -1338,6 +1664,8 @@
         if (page !== 'admin') return;
         const rebuildBtn = document.getElementById('rebuildSimsBtn');
         const rebuildStatus = document.getElementById('rebuildStatus');
+        const rebuildBadge = document.getElementById('rebuildStatusBadge');
+        const rebuildLastRunEl = document.getElementById('rebuildLastRun');
         const form = document.getElementById('adminProductForm');
         const status = document.getElementById('adminProdStatus');
         const loadBtn = document.getElementById('adminLoadProductsBtn');
@@ -1347,37 +1675,232 @@
         const usersBody = document.getElementById('adminUsersBody');
         const userStatus = document.getElementById('adminUserStatus');
 
+        const productState = new Map();
+        const rebuildMeta = { lastRun: null, timer: null };
+
+        const normalizeProduct = (product = {}) => ({
+            _id: product._id,
+            name: product.name || '',
+            brand: product.brand || '',
+            categoryId: product.categoryId || '',
+            categoryName: product.categoryName || product.category || '',
+            price: product.price ?? 0,
+            rating: typeof product.rating === 'number' ? product.rating : '',
+        });
+
+        const createProductInput = (field, value, options = {}) => {
+            const input = document.createElement('input');
+            input.type = options.type || 'text';
+            input.className = 'form-control form-control-sm admin-product-input';
+            input.dataset.field = field;
+            input.placeholder = options.placeholder || '';
+            if (options.step) input.step = options.step;
+            if (options.min !== undefined) input.min = options.min;
+            if (options.max !== undefined) input.max = options.max;
+            input.value = value === undefined || value === null ? '' : String(value);
+            return input;
+        };
+
+        const setRowStatus = (row, message, tone = 'muted', { lock = false } = {}) => {
+            const statusEl = row?.querySelector('[data-role="row-status"]');
+            if (!statusEl) return;
+            statusEl.textContent = message || '';
+            statusEl.className = `small mt-2 text-${tone}`;
+            if (lock) {
+                statusEl.dataset.lock = '1';
+            } else {
+                delete statusEl.dataset.lock;
+            }
+        };
+
+        const unlockRowStatus = (row, delay = 0) => {
+            if (!row) return;
+            window.setTimeout(() => {
+                const statusEl = row.querySelector('[data-role="row-status"]');
+                if (!statusEl) return;
+                delete statusEl.dataset.lock;
+                updateRowDirtyState(row);
+            }, delay);
+        };
+
+        const getRowValues = (row) => {
+            const values = {};
+            row.querySelectorAll('.admin-product-input').forEach((input) => {
+                values[input.dataset.field] = input.value.trim();
+            });
+            return values;
+        };
+
+        const updateRowDirtyState = (row) => {
+            const productId = row?.dataset?.productId;
+            if (!productId || !productState.has(productId)) return;
+            const original = productState.get(productId);
+            const current = getRowValues(row);
+            const fields = ['name', 'brand', 'categoryName', 'categoryId', 'price', 'rating'];
+            const dirty = fields.some((field) => {
+                const origVal = original[field];
+                const currVal = current[field];
+                const normalize = (val) => {
+                    if (val === null || val === undefined) return '';
+                    return String(val).trim();
+                };
+                return normalize(origVal) !== normalize(currVal);
+            });
+            row.classList.toggle('admin-product-row-dirty', dirty);
+            const statusEl = row.querySelector('[data-role="row-status"]');
+            if (statusEl && statusEl.dataset.lock !== '1') {
+                statusEl.textContent = dirty ? 'Unsaved changes' : '';
+                statusEl.className = dirty ? 'small mt-2 text-warning' : 'small mt-2 text-muted';
+            }
+        };
+
+        const buildProductRow = (product) => {
+            const tr = document.createElement('tr');
+            tr.dataset.productId = product._id;
+            tr.classList.add('admin-product-row');
+
+            const idTd = document.createElement('td');
+            const code = document.createElement('code');
+            code.textContent = product._id;
+            idTd.appendChild(code);
+
+            const nameTd = document.createElement('td');
+            const nameInput = createProductInput('name', product.name, { placeholder: 'Name' });
+            const brandInput = createProductInput('brand', product.brand, { placeholder: 'Brand' });
+            nameTd.appendChild(nameInput);
+            nameTd.appendChild(brandInput);
+
+            const categoryTd = document.createElement('td');
+            const categoryNameInput = createProductInput('categoryName', product.categoryName, { placeholder: 'Category name' });
+            const categoryIdInput = createProductInput('categoryId', product.categoryId, { placeholder: 'Category ID' });
+            categoryTd.appendChild(categoryNameInput);
+            categoryTd.appendChild(categoryIdInput);
+
+            const pricingTd = document.createElement('td');
+            const priceInput = createProductInput('price', product.price, { type: 'number', step: '0.01', min: '0', placeholder: 'Price' });
+            const ratingInput = createProductInput('rating', product.rating === '' ? '' : product.rating, { type: 'number', step: '0.1', min: '0', max: '5', placeholder: 'Rating (0-5)' });
+            pricingTd.appendChild(priceInput);
+            pricingTd.appendChild(ratingInput);
+
+            const actionsTd = document.createElement('td');
+            actionsTd.className = 'text-end';
+            actionsTd.innerHTML = `
+                <div class="btn-group btn-group-sm admin-product-actions">
+                    <button class="btn btn-outline-primary" data-action="save-product" data-id="${product._id}">Save</button>
+                    <button class="btn btn-outline-secondary" data-action="reset-product" data-id="${product._id}">Reset</button>
+                    <button class="btn btn-outline-danger" data-action="delete-product" data-id="${product._id}">Delete</button>
+                </div>
+                <div class="small mt-2 text-muted" data-role="row-status"></div>
+            `;
+
+            tr.appendChild(idTd);
+            tr.appendChild(nameTd);
+            tr.appendChild(categoryTd);
+            tr.appendChild(pricingTd);
+            tr.appendChild(actionsTd);
+
+            return tr;
+        };
+
+        const syncRowWithProduct = (row, product) => {
+            if (!row) return;
+            row.querySelectorAll('.admin-product-input').forEach((input) => {
+                const field = input.dataset.field;
+                const value = product[field];
+                input.value = value === undefined || value === null ? '' : String(value);
+            });
+            updateRowDirtyState(row);
+        };
+
+        const resetProductRow = (productId) => {
+            if (!tableBody) return;
+            const row = tableBody.querySelector(`tr[data-product-id="${productId}"]`);
+            if (!row || !productState.has(productId)) return;
+            const product = productState.get(productId);
+            syncRowWithProduct(row, product);
+        };
+
+        const collectProductPayload = (row) => {
+            const values = getRowValues(row);
+            const payload = {
+                name: values.name,
+                brand: values.brand,
+                categoryName: values.categoryName,
+                categoryId: values.categoryId,
+            };
+            if (!payload.name) throw new Error('Name is required');
+            const price = Number(values.price);
+            if (Number.isNaN(price)) throw new Error('Enter a valid price');
+            payload.price = price;
+            if (values.rating !== '') {
+                const rating = Number(values.rating);
+                if (Number.isNaN(rating)) throw new Error('Enter a valid rating');
+                payload.rating = rating;
+            }
+            return payload;
+        };
+
+        const saveProduct = async (productId, row) => {
+            if (!row) return;
+            try {
+                const payload = collectProductPayload(row);
+                setRowStatus(row, 'Saving...', 'muted', { lock: true });
+                const resp = await request(`/api/products/${productId}`, {
+                    method: 'PUT',
+                    body: payload,
+                }, { auth: true });
+                const updated = normalizeProduct(resp?.data || { ...payload, _id: productId });
+                productState.set(productId, updated);
+                syncRowWithProduct(row, updated);
+                setRowStatus(row, 'Product saved', 'success', { lock: true });
+                unlockRowStatus(row, 1800);
+            } catch (err) {
+                setRowStatus(row, err.message, 'danger', { lock: true });
+                unlockRowStatus(row, 2500);
+            }
+        };
+
+        const deleteProduct = async (productId, row) => {
+            const confirmDelete = window.confirm('Delete this product?');
+            if (!confirmDelete) return;
+            if (row) {
+                setRowStatus(row, 'Deleting...', 'muted', { lock: true });
+            }
+            try {
+                await request(`/api/products/${productId}`, { method: 'DELETE' }, { auth: true });
+                showGlobalMessage('Product deleted', 'success');
+                await loadProducts();
+            } catch (err) {
+                if (row) {
+                    setRowStatus(row, err.message, 'danger', { lock: true });
+                    unlockRowStatus(row, 3000);
+                }
+                showGlobalMessage(err.message, 'danger');
+            }
+        };
+
         const loadProducts = async () => {
             if (!tableBody) return;
-            tableBody.innerHTML = '<tr><td colspan="6" class="text-muted">Loading...</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="5" class="text-muted">Loading...</td></tr>';
             try {
                 const resp = await request('/api/products');
                 const items = resp?.data || [];
                 tableBody.innerHTML = '';
+                productState.clear();
                 if (!items.length) {
                     tableBody.innerHTML = '<tr><td colspan="5" class="text-muted">No products</td></tr>';
                 } else {
-                    items.slice(0, 30).forEach((item) => {
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td><code>${item._id}</code></td>
-                            <td>${item.name}</td>
-                            <td>${item.categoryName || item.category || ''}</td>
-                            <td>${formatCurrency(item.price)}</td>
-                            <td>${formatRating(item.rating)}</td>
-                            <td class="text-end">
-                                <div class="btn-group btn-group-sm">
-                                    <button class="btn btn-outline-primary" data-action="edit-product" data-id="${item._id}">Edit</button>
-                                    <button class="btn btn-outline-danger" data-action="delete-product" data-id="${item._id}">Delete</button>
-                                </div>
-                            </td>
-                        `;
-                        tableBody.appendChild(tr);
+                    items.slice(0, 50).forEach((item) => {
+                        const normalized = normalizeProduct(item);
+                        productState.set(normalized._id, normalized);
+                        const row = buildProductRow(normalized);
+                        tableBody.appendChild(row);
+                        updateRowDirtyState(row);
                     });
                 }
                 if (countEl) countEl.textContent = String(items.length || 0);
             } catch (err) {
-                tableBody.innerHTML = `<tr><td colspan="6" class="text-danger">${err.message}</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="5" class="text-danger">${err.message}</td></tr>`;
             }
         };
 
@@ -1418,54 +1941,53 @@
             }
         };
 
-        const editProduct = async (productId) => {
-            try {
-                const resp = await request(`/api/products/${productId}`);
-                const product = resp?.data;
-                if (!product) throw new Error('Product not found');
-                const name = window.prompt('Product name', product.name);
-                if (name === null) return;
-                const priceInput = window.prompt('Product price', product.price);
-                if (priceInput === null) return;
-                const price = Number(priceInput);
-                if (Number.isNaN(price)) throw new Error('Invalid price');
-                await request(`/api/products/${productId}`, {
-                    method: 'PUT',
-                    body: { name: name.trim(), price },
-                }, { auth: true });
-                showGlobalMessage('Product updated', 'success');
-                loadProducts();
-            } catch (err) {
-                showGlobalMessage(err.message, 'danger');
+        const rebuildStateConfig = {
+            idle: { text: 'Idle', badge: 'bg-secondary', tone: 'text-muted' },
+            running: { text: 'Running', badge: 'bg-info text-dark', tone: 'text-info' },
+            success: { text: 'Completed', badge: 'bg-success', tone: 'text-success' },
+            error: { text: 'Error', badge: 'bg-danger', tone: 'text-danger' },
+        };
+
+        const setRebuildState = (state, message) => {
+            const config = rebuildStateConfig[state] || rebuildStateConfig.idle;
+            if (rebuildBadge) {
+                rebuildBadge.className = `badge ${config.badge}`;
+                rebuildBadge.textContent = config.text;
+            }
+            if (rebuildStatus) {
+                rebuildStatus.textContent = message || '';
+                rebuildStatus.className = `mt-2 small ${config.tone}`;
             }
         };
 
-        const deleteProduct = async (productId) => {
-            const confirmDelete = window.confirm('Delete this product?');
-            if (!confirmDelete) return;
-            try {
-                await request(`/api/products/${productId}`, { method: 'DELETE' }, { auth: true });
-                showGlobalMessage('Product deleted', 'success');
-                loadProducts();
-            } catch (err) {
-                showGlobalMessage(err.message, 'danger');
+        const updateRebuildLastRun = () => {
+            if (rebuildLastRunEl) {
+                rebuildLastRunEl.textContent = rebuildMeta.lastRun
+                    ? formatDateTime(rebuildMeta.lastRun)
+                    : 'Never';
             }
         };
 
         if (rebuildBtn) {
             rebuildBtn.addEventListener('click', async () => {
-                toggleButtonLoading(rebuildBtn, true, 'Starting...');
-                if (rebuildStatus) rebuildStatus.textContent = '';
+                toggleButtonLoading(rebuildBtn, true, 'Rebuilding...');
+                window.clearTimeout(rebuildMeta.timer);
+                setRebuildState('running', 'Rebuild in progress...');
                 try {
                     await request('/admin/rebuild-sims', { method: 'POST' }, { auth: true });
-                    if (rebuildStatus) rebuildStatus.textContent = 'Rebuild finished successfully';
+                    rebuildMeta.lastRun = new Date();
+                    updateRebuildLastRun();
+                    setRebuildState('success', 'Similarity matrix refreshed just now');
+                    rebuildMeta.timer = window.setTimeout(() => setRebuildState('idle', ''), 4000);
                 } catch (err) {
-                    if (rebuildStatus) rebuildStatus.textContent = `Rebuild error: ${err.message}`;
+                    setRebuildState('error', err.message);
                 } finally {
                     toggleButtonLoading(rebuildBtn, false);
                 }
             });
         }
+        updateRebuildLastRun();
+        setRebuildState('idle', 'Ready to rebuild');
 
         if (form) {
             form.addEventListener('submit', async (event) => {
@@ -1511,11 +2033,22 @@
                 const productId = btn.getAttribute('data-id');
                 if (!productId) return;
                 const action = btn.getAttribute('data-action');
-                if (action === 'edit-product') {
-                    editProduct(productId);
+                const row = btn.closest('tr[data-product-id]');
+                if (action === 'save-product') {
+                    saveProduct(productId, row);
+                } else if (action === 'reset-product') {
+                    resetProductRow(productId);
                 } else if (action === 'delete-product') {
-                    deleteProduct(productId);
+                    deleteProduct(productId, row);
                 }
+            });
+            tableBody.addEventListener('input', (event) => {
+                const input = event.target;
+                if (!(input instanceof HTMLInputElement)) return;
+                if (!input.classList.contains('admin-product-input')) return;
+                const row = input.closest('tr[data-product-id]');
+                if (!row) return;
+                updateRowDirtyState(row);
             });
         }
 

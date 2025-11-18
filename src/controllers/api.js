@@ -3,6 +3,7 @@ const User = require('../models/User');
 const Product = require('../models/Product');
 const Interaction = require('../models/Interaction');
 const Order = require('../models/Order');
+const Cart = require('../models/Cart');
 const ItemSimilarity = require('../models/ItemSimilarity');
 const UserHistory = require('../models/UserHistory');
 const { logHistory } = require('../services/historyLogger');
@@ -516,6 +517,10 @@ exports.checkout = async (req, res) => {
             update.$pull = { wishlist: { $in: purchasedIds } };
         }
         await User.findByIdAndUpdate(tokenUserId, update);
+        await Cart.findOneAndUpdate(
+            { userId: tokenUserId },
+            { items: [], updatedAt: new Date() }
+        ).catch(() => {});
 
         return res.status(201).json({ ok: true, data: order });
     } catch (e) {
@@ -545,10 +550,18 @@ exports.similarProducts = async (req, res) => {
     try {
         const row = await ItemSimilarity.findOne({ productId: req.params.id }).lean();
         if (!row) return res.json({ ok: true, data: [] });
-        const ids = row.neighbors.map(n => n.productId);
-        const prods = await Product.find({ _id: { $in: ids } }).select('name price brand rating categoryName').lean();
-        const byId = new Map(prods.map(p => [p._id, p]));
-        const data = row.neighbors.map(n => ({ sim: n.sim, product: byId.get(n.productId) || { _id: n.productId } }));
+        const ids = (row.neighbors || []).map((n) => n.productId);
+        if (!ids.length) return res.json({ ok: true, data: [] });
+        const prods = await Product.find({ _id: { $in: ids } })
+            .select('name price brand rating categoryName tags')
+            .lean();
+        const byId = new Map(prods.map((p) => [p._id, p]));
+        const data = [];
+        for (const neighbor of row.neighbors || []) {
+            const product = byId.get(neighbor.productId);
+            if (!product) continue;
+            data.push({ sim: neighbor.sim, product });
+        }
         return res.json({ ok: true, data });
     } catch (e) {
         return res.status(400).json({ ok: false, error: e.message });
@@ -606,13 +619,34 @@ async function computePersonalRecommendations(userId, limit = 20, purchasedSet =
         return [];
     }
 
-    const ranked = Array.from(scores.entries()).sort((a, b) => b[1] - a[1]).slice(0, limit);
-    const ids = ranked.map(([pid]) => pid);
-    const prods = await Product.find({ _id: { $in: ids } }).select('name price brand rating categoryName tags').lean();
-    const byId = new Map(prods.map((p) => [p._id, p]));
-    const data = ranked.map(([pid, score]) => ({ score, product: byId.get(pid) || { _id: pid } }));
+    const sorted = Array.from(scores.entries()).sort((a, b) => b[1] - a[1]);
+    const candidates = sorted.slice(0, Math.min(sorted.length, limit * 3));
+    if (!candidates.length) {
+        await User.findByIdAndUpdate(userId, { cachedRecommendations: [] }).catch(() => {});
+        return [];
+    }
 
-    const cached = ranked.slice(0, Math.min(MAX_RECO_CACHE, ranked.length)).map(([pid, score]) => ({
+    const ids = candidates.map(([pid]) => pid);
+    const prods = await Product.find({ _id: { $in: ids } })
+        .select('name price brand rating categoryName tags')
+        .lean();
+    const byId = new Map(prods.map((p) => [p._id, p]));
+
+    const selected = [];
+    for (const [pid, score] of candidates) {
+        const product = byId.get(pid);
+        if (!product) continue;
+        selected.push({ pid, score, product });
+        if (selected.length >= limit) break;
+    }
+
+    if (!selected.length) {
+        await User.findByIdAndUpdate(userId, { cachedRecommendations: [] }).catch(() => {});
+        return [];
+    }
+
+    const data = selected.map(({ score, product }) => ({ score, product }));
+    const cached = selected.slice(0, Math.min(MAX_RECO_CACHE, selected.length)).map(({ pid, score }) => ({
         productId: pid,
         score,
         ts: new Date(),
@@ -621,6 +655,7 @@ async function computePersonalRecommendations(userId, limit = 20, purchasedSet =
 
     return data;
 }
+exports.computePersonalRecommendations = computePersonalRecommendations;
 
 async function computeWishlistRecommendations(wishlistIds = [], userId, limit = 12, purchasedSet = new Set()) {
     if (!wishlistIds.length) return [];
@@ -641,7 +676,13 @@ async function computeWishlistRecommendations(wishlistIds = [], userId, limit = 
     const ids = ranked.map(([pid]) => pid);
     const prods = await Product.find({ _id: { $in: ids } }).select('name price brand rating categoryName tags').lean();
     const byId = new Map(prods.map((p) => [p._id, p]));
-    return ranked.map(([pid, score]) => ({ score, product: byId.get(pid) || { _id: pid } }));
+    const results = [];
+    for (const [pid, score] of ranked) {
+        const product = byId.get(pid);
+        if (!product) continue;
+        results.push({ score, product });
+    }
+    return results;
 }
 
 async function computeRecentViewRecommendations(userId, purchasedSet = new Set(), limit = 12) {
@@ -670,7 +711,13 @@ async function computeRecentViewRecommendations(userId, purchasedSet = new Set()
     if (!results.length) return [];
     const prods = await Product.find({ _id: { $in: results } }).select('name price brand rating categoryName tags').lean();
     const byId = new Map(prods.map((p) => [p._id, p]));
-    return results.map((pid) => ({ product: byId.get(pid) || { _id: pid } }));
+    const data = [];
+    for (const pid of results) {
+        const product = byId.get(pid);
+        if (!product) continue;
+        data.push({ product });
+    }
+    return data;
 }
 
 async function computeSimilarUsersRecommendations(userId, purchasedSet = new Set(), limit = 12) {
@@ -707,7 +754,13 @@ async function computeSimilarUsersRecommendations(userId, purchasedSet = new Set
     const ids = ranked.map(([pid]) => pid);
     const prods = await Product.find({ _id: { $in: ids } }).select('name price brand rating categoryName tags').lean();
     const byId = new Map(prods.map((p) => [p._id, p]));
-    return ranked.map(([pid, score]) => ({ score, product: byId.get(pid) || { _id: pid } }));
+    const data = [];
+    for (const [pid, score] of ranked) {
+        const product = byId.get(pid);
+        if (!product) continue;
+        data.push({ score, product });
+    }
+    return data;
 }
 
 // GET /recommend/user/:id

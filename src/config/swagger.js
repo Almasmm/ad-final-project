@@ -108,7 +108,55 @@ const options = {
                             }
                         }
                     }
-                }
+                },
+
+                // ----- CART -----
+                CartItemInput: {
+                    type: 'object',
+                    required: ['productId'],
+                    properties: {
+                        productId: { type: 'string', example: 'p_101' },
+                        qty: {
+                            type: 'integer',
+                            minimum: 1,
+                            example: 1,
+                            description: 'Quantity to add (defaults to 1)',
+                        },
+                    },
+                },
+                CartSummary: {
+                    type: 'object',
+                    properties: {
+                        id: { type: 'string', example: 'cart_u_100' },
+                        userId: { type: 'string', example: 'u_100' },
+                        totalItems: { type: 'integer', example: 2 },
+                        totalQty: { type: 'integer', example: 3 },
+                        totalPrice: { type: 'number', example: 279.99 },
+                        updatedAt: { type: 'string', format: 'date-time' },
+                        items: {
+                            type: 'array',
+                            items: {
+                                type: 'object',
+                                properties: {
+                                    productId: { type: 'string', example: 'p_101' },
+                                    qty: { type: 'integer', example: 2 },
+                                    price: { type: 'number', example: 149.99 },
+                                    product: {
+                                        type: 'object',
+                                        nullable: true,
+                                        properties: {
+                                            _id: { type: 'string' },
+                                            name: { type: 'string' },
+                                            brand: { type: 'string' },
+                                            categoryName: { type: 'string' },
+                                            price: { type: 'number' },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
             }
         },
         // Enable globally if needed:

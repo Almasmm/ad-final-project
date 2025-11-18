@@ -9,6 +9,7 @@ const healthRoutes = require('./routes/health');
 const userRoutes = require('./routes/users');
 const productRoutes = require('./routes/products');
 const interactionRoutes = require('./routes/interactions');
+const cartRoutes = require('./routes/cart');
 const orderRoutes = require('./routes/orders');
 const recommendationRoutes = require('./routes/recommendations');
 const recommendRoutes = require('./routes/recommend');
@@ -22,6 +23,12 @@ const { requireRole } = require('./middleware/auth');
 const path = require('path');
 const session = require('express-session');
 const expressLayouts = require('express-ejs-layouts');
+const http = require('http');
+const https = require('https');
+
+const MAX_SOCKETS = Number(process.env.HTTP_MAX_SOCKETS || 500);
+http.globalAgent.maxSockets = MAX_SOCKETS;
+https.globalAgent.maxSockets = MAX_SOCKETS;
 
 const app = express();
 const buildSimsScript = path.join(__dirname, 'scripts', 'build_sims.js');
@@ -81,6 +88,7 @@ app.use('/', healthRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/interactions', interactionRoutes);
+app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api', recommendationRoutes); // /recommendations/:userId and /products/:id/similar
 app.use('/recommend', recommendRoutes);
@@ -135,6 +143,15 @@ app.get('/me/reco', (req, res) => {
 app.get('/me/wishlist', (req, res) => {
     if (!req.ctx.userId) return res.redirect('/login');
     res.render('wishlist', { userId: req.ctx.userId, email: req.ctx.email, page: 'wishlist' });
+});
+
+app.get('/me/cart', (req, res) => {
+    if (!req.ctx.userId) return res.redirect('/login');
+    res.render('cart', {
+        userId: req.ctx.userId,
+        email: req.ctx.email,
+        page: 'cart',
+    });
 });
 
 app.get('/me/profile', (req, res) => {

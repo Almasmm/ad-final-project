@@ -101,3 +101,48 @@ body {
 #profileMeta {
     font-size: 0.85rem;
 }
+
+.admin-rebuild-card {
+    background: linear-gradient(135deg, #f9fbff, #eef3ff);
+    border: 1px solid #dae3ff;
+}
+
+#rebuildStatusBadge {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.admin-products-table .form-control {
+    min-width: 140px;
+}
+
+.admin-product-input + .admin-product-input {
+    margin-top: 0.35rem;
+}
+
+.admin-product-row-dirty {
+    background-color: #fff8e1;
+}
+
+.admin-product-actions .btn {
+    min-width: 72px;
+}
+
+.admin-products-table code {
+    font-size: 0.8rem;
+}
+
+.cart-item {
+    border: 1px solid #edf1ff;
+    border-radius: 0.75rem;
+}
+
+.cart-qty-group .cart-qty-input {
+    max-width: 80px;
+    text-align: center;
+}
+
+.cart-qty-group .btn {
+    min-width: 36px;
+}

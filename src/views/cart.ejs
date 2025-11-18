@@ -1,0 +1,46 @@
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card card-body shadow-sm d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div>
+                <h3 class="mb-1">Cart</h3>
+                <p class="text-muted mb-0">Review items you've added and adjust quantities before placing an order.</p>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm" id="cartRefreshBtn">Refresh</button>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card card-body shadow-sm h-100">
+            <div id="cartItems" class="vstack gap-3"></div>
+            <p id="cartEmpty" class="text-muted mb-0">Loading cart...</p>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card card-body shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h5 class="mb-0">Summary</h5>
+                <small class="text-muted" id="cartSummaryUpdated">Updated just now</small>
+            </div>
+            <dl class="row mb-0 small">
+                <dt class="col-6 text-muted">Unique items</dt>
+                <dd class="col-6 text-end fw-semibold" id="cartSummaryItems">0</dd>
+                <dt class="col-6 text-muted">Total quantity</dt>
+                <dd class="col-6 text-end" id="cartSummaryQty">0</dd>
+                <dt class="col-6 text-muted">Subtotal</dt>
+                <dd class="col-6 text-end" id="cartSummarySubtotal">$0</dd>
+            </dl>
+            <hr>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <span class="text-muted">Grand total</span>
+                <span class="fs-4 fw-bold text-primary" id="cartSummaryTotal">$0</span>
+            </div>
+            <button class="btn btn-primary w-100 mb-2" id="cartCheckoutBtn">Checkout</button>
+            <div class="text-muted small">Orders are simulated and will clear the cart for demo purposes.</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    window.__USER_ID__ = "<%= userId %>";
+</script>
