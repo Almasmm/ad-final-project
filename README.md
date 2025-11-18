@@ -195,4 +195,4 @@ EJS pages live under `src/views`:
 - **Benchmark reports missing:** set `PERF_REPORT_*` to persistent filenames or collect the timestamped JSON in `tests/performance/results/`.
 
 ## License
-Released under the ISC License. See `LICENSE` for details.
+Released under the MIT License. See `LICENSE` for details.
