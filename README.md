@@ -1,4 +1,4 @@
-# Tenyz Market (AD Final Project)
+# Tenyz Market
 
 Tenyz Market is a MongoDB-backed e-commerce playground that mixes classic catalog + cart flows with a collaborative-filtering recommendation service, server-rendered dashboards, REST APIs, and an Artillery-based performance lab. The codebase intentionally stays framework-light (Express + EJS) so students can trace every middleware, data-access pattern, and benchmark.
 
